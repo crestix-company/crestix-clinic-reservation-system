@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
+  Home,
   ListChecks,
   CalendarDays,
   DoorOpen,
@@ -15,12 +15,12 @@ import {
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { href: "/admin", label: "ダッシュボード", icon: LayoutDashboard },
+  { href: "/admin", label: "本日の受付", icon: Home },
+  { href: "/admin/calendar", label: "予約カレンダー", icon: CalendarDays },
   { href: "/admin/reservations", label: "予約一覧", icon: ListChecks },
-  { href: "/admin/calendar", label: "カレンダー", icon: CalendarDays },
-  { href: "/admin/reception", label: "当日受付", icon: DoorOpen },
-  { href: "/admin/patients", label: "患者", icon: Users },
-  { href: "/admin/analytics", label: "集計", icon: BarChart3 },
+  { href: "/admin/reception", label: "当日受付管理", icon: DoorOpen },
+  { href: "/admin/patients", label: "患者管理", icon: Users },
+  { href: "/admin/analytics", label: "分析・レポート", icon: BarChart3 },
 ];
 
 export function AdminSidebar() {
@@ -40,7 +40,7 @@ export function AdminSidebar() {
 
       <nav className="flex-1 space-y-1 px-3 py-2">
         {NAV_ITEMS.map((item) => {
-          const active = pathname === item.href;
+          const active = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
           const Icon = item.icon;
           return (
             <Link
@@ -65,7 +65,7 @@ export function AdminSidebar() {
           href="/admin/settings"
           className={cn(
             "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
-            pathname === "/admin/settings"
+            pathname.startsWith("/admin/settings")
               ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
               : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
           )}
