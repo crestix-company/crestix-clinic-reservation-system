@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { CalendarCheck, CheckCircle2, Clock3, Plus, Search, Stethoscope, Users } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,18 +20,6 @@ import type { EnrichedReservation } from "@/lib/services/types";
 import type { ReservationStatus } from "@/types/domain";
 
 const ALL = "ALL";
-
-function doctorLabel(reservation: EnrichedReservation) {
-  switch (reservation.reservationType.code) {
-    case "GASTRO":
-    case "COLON":
-      return "担当医A";
-    case "CHECKUP":
-      return "健診担当";
-    default:
-      return "診察担当";
-  }
-}
 
 function timeLabel(reservation: EnrichedReservation) {
   return reservation.startTime || "当日順番";
@@ -95,9 +84,7 @@ export default function AdminDashboardPage() {
           <p className="text-sm text-muted-foreground">本日の予約・検査内容・受付状況を1画面で確認できます</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" asChild>
-            <Link href="/admin/calendar">予約カレンダー</Link>
-          </Button>
+          <Link href="/admin/calendar" className={cn(buttonVariants({ variant: "outline" }))}>予約カレンダー</Link>
           <Button onClick={() => setNewOpen(true)}>
             <Plus className="size-4" />
             新規予約
@@ -190,7 +177,7 @@ export default function AdminDashboardPage() {
                             : "当日受付・時間指定なし"}
                         </div>
                       </td>
-                      <td className="px-5 py-4 align-top text-muted-foreground">{doctorLabel(reservation)}</td>
+                      <td className="px-5 py-4 align-top text-muted-foreground">未設定</td>
                       <td className="px-5 py-4 align-top"><ReservationStatusBadge status={reservation.status} /></td>
                       <td className="px-5 py-4 align-top"><ReservationSourceBadge source={reservation.reservationSource} /></td>
                       <td className="px-5 py-4 align-top">
@@ -219,7 +206,7 @@ export default function AdminDashboardPage() {
               <StatusSummary label="待機中・呼出中" value={waiting} />
               <StatusSummary label="診察中" value={inConsultation} />
               <StatusSummary label="本日完了" value={completed} />
-              <Button asChild variant="outline" className="mt-2 w-full"><Link href="/admin/reception">当日受付管理を開く</Link></Button>
+              <Link href="/admin/reception" className={cn(buttonVariants({ variant: "outline" }), "mt-2 w-full")}>当日受付管理を開く</Link>
             </CardContent>
           </Card>
 
@@ -232,7 +219,7 @@ export default function AdminDashboardPage() {
                   <span className="font-semibold tabular-nums">{item.count}件</span>
                 </div>
               ))}
-              <Button asChild variant="ghost" className="w-full"><Link href="/admin/reservations">すべての予約を見る</Link></Button>
+              <Link href="/admin/reservations" className={cn(buttonVariants({ variant: "ghost" }), "w-full")}>すべての予約を見る</Link>
             </CardContent>
           </Card>
         </div>
