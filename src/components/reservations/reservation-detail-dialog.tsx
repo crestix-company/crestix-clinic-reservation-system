@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ReservationSourceBadge } from "./reservation-source-badge";
 import { ReservationStatusBadge } from "./reservation-status-badge";
+import { EhrLinkButton } from "@/components/integrations/ehr-link-button";
 import { formatDateJp, formatDateTimeFull } from "@/lib/date";
 import type { EnrichedReservation } from "@/lib/services/types";
 import type { ReservationStatus } from "@/types/domain";
@@ -95,7 +96,8 @@ export function ReservationDetailDialog({ reservation, open, onOpenChange, onSta
         </section>
 
         <DialogFooter className="flex-row justify-between gap-2 sm:justify-between">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <EhrLinkButton patientId={reservation.patient.id} patientName={reservation.patient.name} compact />
             <Button variant="outline" size="sm" onClick={() => setRescheduling((v) => !v)}>
               予約変更
             </Button>
