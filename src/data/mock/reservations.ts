@@ -55,6 +55,7 @@ function buildReservation(input: {
     clinicId: CLINIC_ID,
     patientId: input.patientId,
     reservationTypeId: input.reservationTypeId,
+    doctorId: ["dr-director", "dr-sato", "dr-tanaka"][(seq - 1) % 3],
     reservationDate: input.date,
     startTime: input.startTime,
     endTime: input.endTime,
@@ -207,6 +208,17 @@ for (const cell of remainingCells) {
     );
   }
 }
+
+// Demonstrate two bookings for the same doctor and time in one calendar cell.
+reservationsToday.push({ ...buildReservation({ patientId: NAMED_PATIENTS.yamadaTaro.id, reservationTypeId: RESERVATION_TYPE_IDS.GASTRO, date: TODAY, startTime: "09:30", endTime: "10:00", source: "PHONE", status: "RESERVED" }), doctorId: "dr-sato" });
+reservationsToday.push({ ...buildReservation({ patientId: NAMED_PATIENTS.tanakaTaro.id, reservationTypeId: RESERVATION_TYPE_IDS.GASTRO, date: TODAY, startTime: "09:30", endTime: "10:00", source: "COUNTER", status: "RESERVED" }), doctorId: "dr-sato" });
+
+// A longitudinal demo history for the patient detail screen.
+reservationsToday.push(
+  { ...buildReservation({ patientId: NAMED_PATIENTS.yamadaTaro.id, reservationTypeId: RESERVATION_TYPE_IDS.GENERAL, date: "2026-04-10", startTime: "", endTime: "", source: "WEB", status: "COMPLETED" }), doctorId: "dr-director" },
+  { ...buildReservation({ patientId: NAMED_PATIENTS.yamadaTaro.id, reservationTypeId: RESERVATION_TYPE_IDS.GASTRO, date: "2026-06-15", startTime: "10:00", endTime: "10:30", source: "WEB", status: "COMPLETED" }), doctorId: "dr-director" },
+  { ...buildReservation({ patientId: NAMED_PATIENTS.yamadaTaro.id, reservationTypeId: RESERVATION_TYPE_IDS.GENERAL, date: "2026-11-09", startTime: "", endTime: "", source: "WEB", status: "RESERVED" }), doctorId: "dr-director" },
+);
 
 // --- Additional reservations on other October dates, for the calendar, --
 // --- week/month views and the analytics screen.                        --

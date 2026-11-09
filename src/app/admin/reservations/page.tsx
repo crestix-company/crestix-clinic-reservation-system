@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ReservationTable } from "@/components/reservations/reservation-table";
 import { ReservationDetailDialog } from "@/components/reservations/reservation-detail-dialog";
-import { listEnrichedReservations } from "@/lib/services/reservation-service";
-import { reservationTypes } from "@/data/mock/reservation-types";
+import { useDemoStore } from "@/components/admin/demo-store";
 import { RESERVATION_SOURCE_LABEL, RESERVATION_STATUS_LABEL } from "@/lib/labels";
 import type { EnrichedReservation } from "@/lib/services/types";
 import type { ReservationSource, ReservationStatus } from "@/types/domain";
@@ -18,8 +17,7 @@ const PAGE_SIZE = 10;
 const ALL = "ALL";
 
 export default function ReservationsListPage() {
-  const allReservations = useMemo(() => listEnrichedReservations(), []);
-  const [overrides, setOverrides] = useState<Record<string, ReservationStatus>>({});
+  const { reservations: allReservations, types, updateReservation, updateStatus } = useDemoStore();
 
   const [keyword, setKeyword] = useState("");
   const [typeFilter, setTypeFilter] = useState(ALL);
@@ -32,7 +30,6 @@ export default function ReservationsListPage() {
   const filtered = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
     return allReservations
-      .map((r) => (overrides[r.id] ? { ...r, status: overrides[r.id] } : r))
       .filter((r) => {
         if (kw && !(r.patient.name.toLowerCase().includes(kw) || r.patient.phone.includes(kw) || r.id.toLowerCase().includes(kw))) {
           return false;
@@ -44,7 +41,7 @@ export default function ReservationsListPage() {
         return true;
       })
       .sort((a, b) => (b.reservationDate + b.startTime).localeCompare(a.reservationDate + a.startTime));
-  }, [allReservations, overrides, keyword, typeFilter, sourceFilter, statusFilter, dateFilter]);
+  }, [allReservations, keyword, typeFilter, sourceFilter, statusFilter, dateFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -54,10 +51,7 @@ export default function ReservationsListPage() {
     setPage(1);
   }
 
-  function handleStatusChange(id: string, status: ReservationStatus) {
-    setOverrides((prev) => ({ ...prev, [id]: status }));
-    setSelected((prev) => (prev && prev.id === id ? { ...prev, status } : prev));
-  }
+  const currentSelected = allReservations.find((reservation) => reservation.id === selected?.id) ?? null;
 
   return (
     <div className="space-y-6">
@@ -92,12 +86,12 @@ export default function ReservationsListPage() {
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="予約内容">
-                  {(v: string) => (v === ALL ? "予約内容: すべて" : (reservationTypes.find((t) => t.id === v)?.name ?? "予約内容"))}
+                  {(v: string) => (v === ALL ? "予約内容: すべて" : (types.find((t) => t.id === v)?.name ?? "予約内容"))}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ALL}>予約内容: すべて</SelectItem>
-                {reservationTypes.map((t) => (
+                {types.map((t) => (
                   <SelectItem key={t.id} value={t.id}>
                     {t.name}
                   </SelectItem>
@@ -188,10 +182,11 @@ export default function ReservationsListPage() {
       </Card>
 
       <ReservationDetailDialog
-        reservation={selected}
+        reservation={currentSelected}
         open={!!selected}
         onOpenChange={(open) => !open && setSelected(null)}
-        onStatusChange={handleStatusChange}
+        onStatusChange={updateStatus}
+        onUpdate={updateReservation}
       />
     </div>
   );

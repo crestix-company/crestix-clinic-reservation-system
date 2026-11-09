@@ -5,16 +5,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ReservationTypeChart } from "@/components/dashboard/reservation-type-chart";
 import { ReservationSourceChart } from "@/components/dashboard/reservation-source-chart";
 import { getMonthlyAnalytics } from "@/lib/services/analytics-service";
+import { useDemoStore } from "@/components/admin/demo-store";
+import { getToday } from "@/lib/services/reservation-service";
 
 export default function AnalyticsPage() {
-  const analytics = useMemo(() => getMonthlyAnalytics(), []);
+  const { reservations, types } = useDemoStore();
+  const analytics = useMemo(() => getMonthlyAnalytics(getToday(), reservations, types), [reservations, types]);
 
   const maxBySourceInRow = (row: (typeof analytics.matrix)[number]) => Math.max(...row.bySource.map((s) => s.count), 1);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">集計</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">予約集計</h1>
         <p className="text-sm text-muted-foreground">予約を一元管理すると、何の予約がどこから入っているかが一目で分かります</p>
       </div>
 

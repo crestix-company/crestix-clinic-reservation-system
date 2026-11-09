@@ -27,7 +27,12 @@ export type ReservationType = {
   code: string;
   name: string;
   active: boolean;
+  color?: string;
+  durationMinutes?: number;
+  capacity?: number;
 };
+
+export type Doctor = { id: string; clinicId: string; name: string; role: string; active: boolean };
 
 /**
  * Where the reservation was actually *made* (the booking channel).
@@ -55,6 +60,7 @@ export type Reservation = {
   clinicId: string;
   patientId: string;
   reservationTypeId: string;
+  doctorId?: string;
   reservationDate: string; // ISO date, e.g. "2026-10-05"
   startTime: string; // "09:30"
   endTime: string; // "10:00"
