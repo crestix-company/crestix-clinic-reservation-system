@@ -1,11 +1,12 @@
 "use client";
 
-import { HelpCircle, Plus } from "lucide-react";
+import { CalendarClock, HelpCircle, Plus, Stethoscope, UserRoundCog } from "lucide-react";
 import { useDemoStore } from "@/components/admin/demo-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
@@ -21,7 +22,7 @@ function HelpPopover({ title, children }: { title: string; children: React.React
       </button>
       <span
         role="tooltip"
-        className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 hidden w-72 -translate-x-1/2 rounded-lg border bg-popover p-3 text-left text-sm font-normal leading-6 text-popover-foreground shadow-lg group-hover:block group-focus-within:block"
+        className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 hidden w-80 -translate-x-1/2 rounded-lg border bg-popover p-3 text-left text-sm font-normal leading-6 text-popover-foreground shadow-lg group-hover:block group-focus-within:block"
       >
         <span className="mb-1 block font-semibold">{title}</span>
         <span className="block text-muted-foreground">{children}</span>
@@ -30,17 +31,31 @@ function HelpPopover({ title, children }: { title: string; children: React.React
   );
 }
 
-function SectionTitle({
+function SettingHeader({
   title,
   description,
+  help,
 }: {
   title: string;
-  description: React.ReactNode;
+  description: string;
+  help?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-1.5">
-      <CardTitle>{title}</CardTitle>
-      <HelpPopover title={title}>{description}</HelpPopover>
+    <div className="space-y-1">
+      <div className="flex items-center gap-1.5">
+        <h2 className="text-lg font-semibold">{title}</h2>
+        {help ? <HelpPopover title={title}>{help}</HelpPopover> : null}
+      </div>
+      <p className="text-sm text-muted-foreground">{description}</p>
+    </div>
+  );
+}
+
+function SettingImpact({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-lg border bg-muted/30 px-3 py-2 text-xs leading-5 text-muted-foreground">
+      <span className="font-medium text-foreground">この設定が反映される場所：</span>
+      {children}
     </div>
   );
 }
@@ -49,311 +64,407 @@ export default function BookingSettingsPage() {
   const { doctors, types, schedule, setDoctors, setTypes, setSchedule } = useDemoStore();
 
   return (
-    <div className="space-y-4">
-      <div>
-        <div className="flex items-center gap-1.5">
-          <h1 className="text-2xl font-semibold tracking-tight">予約枠・診療設定</h1>
-          <HelpPopover title="この画面でできること">
-            医院ごとの予約ルールを設定する画面です。担当医、診療時間、休診日、予約メニュー、所要時間、1枠の定員などを変更できます。設定内容は予約カレンダーや管理画面のデモ表示に反映されます。
-          </HelpPopover>
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-2xl font-semibold tracking-tight">予約設定</h1>
+            <HelpPopover title="予約設定について">
+              クリニックの予約運用を決める管理画面です。まず診療メニュー、次に担当医、最後に診療時間・受付期間を設定することで、予約カレンダーや患者向けWEB予約の基本条件を整えられます。
+            </HelpPopover>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            医院ごとの予約ルールを設定します。受付スタッフや院長が運用変更時に使用する想定です。
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground">
-          医院の運用に合わせて、予約を受け付ける条件や表示内容を設定します。
-        </p>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-3">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <SectionTitle
-              title="医師一覧"
-              description={
-                <>
-                  予約を担当する医師を登録・編集します。名称や役割を変更でき、「有効」を外すと新しい予約の担当候補から外す想定です。
-                </>
-              }
-            />
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                setDoctors((current) => [
-                  ...current,
-                  {
-                    id: `dr-demo-${Date.now()}`,
-                    clinicId: current[0]?.clinicId ?? "clinic-kawaratani",
-                    name: "新しい医師",
-                    role: "担当医",
-                    active: true,
-                  },
-                ])
-              }
-            >
-              <Plus className="size-4" />
-              医師を追加
-            </Button>
-          </CardHeader>
-
-          <CardContent className="space-y-3">
-            <p className="rounded-lg bg-muted/50 px-3 py-2 text-xs leading-5 text-muted-foreground">
-              例：院長、非常勤医師などを登録し、予約カレンダー上で担当医ごとに予約状況を確認できます。
-            </p>
-
-            {doctors.map((doctor) => (
-              <div key={doctor.id} className="flex items-center gap-2">
-                <Input
-                  aria-label={`${doctor.name}の名前`}
-                  value={doctor.name}
-                  onChange={(event) =>
-                    setDoctors((current) =>
-                      current.map((item) =>
-                        item.id === doctor.id ? { ...item, name: event.target.value } : item,
-                      ),
-                    )
-                  }
-                />
-                <Input
-                  aria-label={`${doctor.name}の役割`}
-                  className="w-28"
-                  value={doctor.role}
-                  onChange={(event) =>
-                    setDoctors((current) =>
-                      current.map((item) =>
-                        item.id === doctor.id ? { ...item, role: event.target.value } : item,
-                      ),
-                    )
-                  }
-                />
-                <label className="flex shrink-0 items-center gap-1 text-xs">
-                  <input
-                    type="checkbox"
-                    checked={doctor.active}
-                    onChange={(event) =>
-                      setDoctors((current) =>
-                        current.map((item) =>
-                          item.id === doctor.id ? { ...item, active: event.target.checked } : item,
-                        ),
-                      )
-                    }
-                  />
-                  有効
-                  <HelpPopover title="有効">
-                    ONの医師を予約時の担当候補として使用します。長期休診・退職などで予約を受け付けない場合はOFFにする想定です。
-                  </HelpPopover>
-                </label>
-              </div>
-            ))}
+          <CardContent className="flex gap-3 p-4">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+              <Stethoscope className="size-4" />
+            </span>
+            <div>
+              <div className="text-sm font-semibold">1. 診療メニューを決める</div>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                何を予約できるか、何分枠か、同時に何名受け付けるかを設定します。
+              </p>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <SectionTitle
-              title="診療時間・休診日"
-              description={
-                <>
-                  医院全体の基本診療時間と休診日を設定します。患者向けWEB予約や管理側の空き枠判定で使用する想定です。
-                </>
-              }
-            />
-          </CardHeader>
-
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {(["morningStart", "morningEnd", "afternoonStart", "afternoonEnd"] as const).map(
-                (key, index) => (
-                  <div key={key}>
-                    <Label htmlFor={key}>
-                      {["午前 開始", "午前 終了", "午後 開始", "午後 終了"][index]}
-                    </Label>
-                    <Input
-                      id={key}
-                      type="time"
-                      value={schedule[key]}
-                      onChange={(event) =>
-                        setSchedule((current) => ({ ...current, [key]: event.target.value }))
-                      }
-                    />
-                  </div>
-                ),
-              )}
-            </div>
-
+          <CardContent className="flex gap-3 p-4">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+              <UserRoundCog className="size-4" />
+            </span>
             <div>
-              <div className="flex items-center gap-1">
-                <Label>休診日</Label>
-                <HelpPopover title="休診日">
-                  予約を受け付けない曜日を指定します。曜日ごとの細かな診療時間や臨時休診は、今後別設定として拡張できます。
-                </HelpPopover>
-              </div>
-              <div className="flex flex-wrap gap-3 pt-2">
-                {WEEKDAYS.map((day, index) => (
-                  <label key={day} className="flex items-center gap-1 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={schedule.closedDays.includes(index)}
-                      onChange={(event) =>
-                        setSchedule((current) => ({
-                          ...current,
-                          closedDays: event.target.checked
-                            ? [...current.closedDays, index]
-                            : current.closedDays.filter((value) => value !== index),
-                        }))
-                      }
-                    />
-                    {day}曜日
-                  </label>
-                ))}
-              </div>
+              <div className="text-sm font-semibold">2. 担当医を登録する</div>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                予約を担当する医師を登録し、現在予約を受け付ける医師を管理します。
+              </p>
             </div>
+          </CardContent>
+        </Card>
 
-            <div className="max-w-52">
-              <div className="flex items-center gap-1">
-                <Label htmlFor="booking-days">予約受付期間（日）</Label>
-                <HelpPopover title="予約受付期間">
-                  今日から何日先まで患者が予約できるかを設定します。例：30日にすると、原則30日先までを予約対象にする想定です。
-                </HelpPopover>
-              </div>
-              <Input
-                id="booking-days"
-                type="number"
-                min={1}
-                value={schedule.bookingDays}
-                onChange={(event) =>
-                  setSchedule((current) => ({ ...current, bookingDays: Number(event.target.value) }))
+        <Card>
+          <CardContent className="flex gap-3 p-4">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+              <CalendarClock className="size-4" />
+            </span>
+            <div>
+              <div className="text-sm font-semibold">3. 診療日・受付期間を決める</div>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                診療時間、休診日、何日先まで予約を受け付けるかを設定します。
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="menus" className="space-y-4">
+        <TabsList className="h-auto flex-wrap">
+          <TabsTrigger value="menus">診療メニュー</TabsTrigger>
+          <TabsTrigger value="doctors">担当医</TabsTrigger>
+          <TabsTrigger value="schedule">診療日・受付期間</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="menus">
+          <Card>
+            <CardHeader className="space-y-3">
+              <SettingHeader
+                title="診療メニュー"
+                description="患者が予約時に選択する診療内容と、予約枠の基本条件を設定します。"
+                help={
+                  <>
+                    一般診察、胃カメラ、人間ドックなど、医院ごとに予約対象を登録します。所要時間と定員は空き枠の判定に利用する想定です。
+                  </>
                 }
               />
-            </div>
-          </CardContent>
-        </Card>
+              <SettingImpact>
+                患者向けWEB予約、予約カレンダー、新規予約、予約集計
+              </SettingImpact>
+            </CardHeader>
 
-        <Card className="xl:col-span-2">
-          <CardHeader>
-            <SectionTitle
-              title="診療メニュー・予約枠"
-              description={
-                <>
-                  患者が選ぶ予約メニューと、その予約枠の基本ルールを設定します。各メニューの所要時間・同時間帯の定員・カレンダー上の表示色・利用可否を管理します。
-                </>
-              }
-            />
-          </CardHeader>
+            <CardContent className="space-y-3">
+              {types.map((type) => (
+                <div key={type.id} className="rounded-xl border p-4">
+                  <div className="grid gap-4 lg:grid-cols-[minmax(220px,1fr)_140px_140px_120px_100px] lg:items-end">
+                    <div>
+                      <Label htmlFor={`name-${type.id}`}>診療メニュー名</Label>
+                      <Input
+                        id={`name-${type.id}`}
+                        value={type.name}
+                        onChange={(event) =>
+                          setTypes((current) =>
+                            current.map((item) =>
+                              item.id === type.id ? { ...item, name: event.target.value } : item,
+                            ),
+                          )
+                        }
+                      />
+                    </div>
 
-          <CardContent className="space-y-3">
-            <p className="rounded-lg bg-muted/50 px-3 py-2 text-xs leading-5 text-muted-foreground">
-              例：胃カメラ「30分・1枠2名」、一般診察「15分・1枠3名」のように、診療内容ごとの予約条件を設定します。
-            </p>
+                    <div>
+                      <div className="flex items-center gap-1">
+                        <Label htmlFor={`duration-${type.id}`}>所要時間</Label>
+                        <HelpPopover title="所要時間">
+                          このメニュー1件あたりに確保する標準時間です。例：胃カメラ30分、一般診察15分など。
+                        </HelpPopover>
+                      </div>
+                      <div className="relative">
+                        <Input
+                          id={`duration-${type.id}`}
+                          className="pr-10"
+                          type="number"
+                          min={5}
+                          step={5}
+                          value={type.durationMinutes ?? 30}
+                          onChange={(event) =>
+                            setTypes((current) =>
+                              current.map((item) =>
+                                item.id === type.id
+                                  ? { ...item, durationMinutes: Number(event.target.value) }
+                                  : item,
+                              ),
+                            )
+                          }
+                        />
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                          分
+                        </span>
+                      </div>
+                    </div>
 
-            {types.map((type) => (
-              <div
-                key={type.id}
-                className="grid grid-cols-2 gap-2 rounded-lg border p-3 sm:grid-cols-[minmax(160px,1fr)_120px_120px_100px_90px] sm:items-end"
-              >
-                <div>
-                  <Label htmlFor={`name-${type.id}`}>診療メニュー</Label>
-                  <Input
-                    id={`name-${type.id}`}
-                    value={type.name}
-                    onChange={(event) =>
-                      setTypes((current) =>
-                        current.map((item) =>
-                          item.id === type.id ? { ...item, name: event.target.value } : item,
-                        ),
-                      )
-                    }
-                  />
-                </div>
+                    <div>
+                      <div className="flex items-center gap-1">
+                        <Label htmlFor={`capacity-${type.id}`}>1枠の定員</Label>
+                        <HelpPopover title="1枠の定員">
+                          同じ予約時間に受け付けられる人数です。設備や医師の対応可能数に合わせて設定します。
+                        </HelpPopover>
+                      </div>
+                      <div className="relative">
+                        <Input
+                          id={`capacity-${type.id}`}
+                          className="pr-10"
+                          type="number"
+                          min={1}
+                          value={type.capacity ?? 1}
+                          onChange={(event) =>
+                            setTypes((current) =>
+                              current.map((item) =>
+                                item.id === type.id ? { ...item, capacity: Number(event.target.value) } : item,
+                              ),
+                            )
+                          }
+                        />
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                          名
+                        </span>
+                      </div>
+                    </div>
 
-                <div>
-                  <div className="flex items-center gap-1">
-                    <Label htmlFor={`duration-${type.id}`}>所要時間（分）</Label>
-                    <HelpPopover title="所要時間">
-                      この予約メニュー1件あたりに確保する標準時間です。カレンダー上の予約枠や空き時間判定に使用する想定です。
-                    </HelpPopover>
+                    <div>
+                      <div className="flex items-center gap-1">
+                        <Label htmlFor={`color-${type.id}`}>表示色</Label>
+                        <HelpPopover title="表示色">
+                          予約カレンダーで診療メニューを識別するための色です。予約条件には影響しません。
+                        </HelpPopover>
+                      </div>
+                      <Input
+                        id={`color-${type.id}`}
+                        type="color"
+                        value={type.color ?? "#64748b"}
+                        onChange={(event) =>
+                          setTypes((current) =>
+                            current.map((item) =>
+                              item.id === type.id ? { ...item, color: event.target.value } : item,
+                            ),
+                          )
+                        }
+                      />
+                    </div>
+
+                    <label className="flex items-center gap-2 pb-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={type.active}
+                        onChange={(event) =>
+                          setTypes((current) =>
+                            current.map((item) =>
+                              item.id === type.id ? { ...item, active: event.target.checked } : item,
+                            ),
+                          )
+                        }
+                      />
+                      予約受付中
+                    </label>
                   </div>
-                  <Input
-                    id={`duration-${type.id}`}
-                    type="number"
-                    min={5}
-                    step={5}
-                    value={type.durationMinutes ?? 30}
-                    onChange={(event) =>
-                      setTypes((current) =>
-                        current.map((item) =>
-                          item.id === type.id
-                            ? { ...item, durationMinutes: Number(event.target.value) }
-                            : item,
-                        ),
-                      )
-                    }
-                  />
                 </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-                <div>
-                  <div className="flex items-center gap-1">
-                    <Label htmlFor={`capacity-${type.id}`}>枠の定員</Label>
-                    <HelpPopover title="枠の定員">
-                      同じ時間帯に受け付けられる予約件数です。医師・検査室・設備の運用に合わせて設定します。
-                    </HelpPopover>
-                  </div>
-                  <Input
-                    id={`capacity-${type.id}`}
-                    type="number"
-                    min={1}
-                    value={type.capacity ?? 1}
-                    onChange={(event) =>
-                      setTypes((current) =>
-                        current.map((item) =>
-                          item.id === type.id ? { ...item, capacity: Number(event.target.value) } : item,
-                        ),
-                      )
-                    }
-                  />
-                </div>
-
-                <div>
-                  <div className="flex items-center gap-1">
-                    <Label htmlFor={`color-${type.id}`}>表示色</Label>
-                    <HelpPopover title="表示色">
-                      予約カレンダー上で診療メニューを見分けやすくするための色です。予約条件そのものには影響しません。
-                    </HelpPopover>
-                  </div>
-                  <Input
-                    id={`color-${type.id}`}
-                    type="color"
-                    value={type.color ?? "#64748b"}
-                    onChange={(event) =>
-                      setTypes((current) =>
-                        current.map((item) =>
-                          item.id === type.id ? { ...item, color: event.target.value } : item,
-                        ),
-                      )
-                    }
-                  />
-                </div>
-
-                <label className="flex items-center gap-1 pb-2 text-xs">
-                  <input
-                    type="checkbox"
-                    checked={type.active}
-                    onChange={(event) =>
-                      setTypes((current) =>
-                        current.map((item) =>
-                          item.id === type.id ? { ...item, active: event.target.checked } : item,
-                        ),
-                      )
-                    }
-                  />
-                  有効
-                  <HelpPopover title="有効">
-                    ONの診療メニューを予約受付の対象として使用します。季節限定メニューや一時停止中の診療はOFFにする想定です。
-                  </HelpPopover>
-                </label>
+        <TabsContent value="doctors">
+          <Card>
+            <CardHeader className="space-y-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <SettingHeader
+                  title="担当医"
+                  description="予約カレンダーや新規予約で選択する医師を管理します。"
+                  help={
+                    <>
+                      医師名と役割を登録します。「予約受付中」をOFFにすると、新しい予約を受け付けない医師として扱う想定です。
+                    </>
+                  }
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    setDoctors((current) => [
+                      ...current,
+                      {
+                        id: `dr-demo-${Date.now()}`,
+                        clinicId: current[0]?.clinicId ?? "clinic-kawaratani",
+                        name: "新しい医師",
+                        role: "担当医",
+                        active: true,
+                      },
+                    ])
+                  }
+                >
+                  <Plus className="size-4" />
+                  医師を追加
+                </Button>
               </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
+
+              <SettingImpact>
+                予約カレンダー、新規予約、予約一覧の担当医表示
+              </SettingImpact>
+            </CardHeader>
+
+            <CardContent className="space-y-3">
+              {doctors.map((doctor) => (
+                <div
+                  key={doctor.id}
+                  className="grid gap-3 rounded-xl border p-4 sm:grid-cols-[minmax(200px,1fr)_180px_120px] sm:items-end"
+                >
+                  <div>
+                    <Label htmlFor={`doctor-name-${doctor.id}`}>医師名</Label>
+                    <Input
+                      id={`doctor-name-${doctor.id}`}
+                      value={doctor.name}
+                      onChange={(event) =>
+                        setDoctors((current) =>
+                          current.map((item) =>
+                            item.id === doctor.id ? { ...item, name: event.target.value } : item,
+                          ),
+                        )
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`doctor-role-${doctor.id}`}>役割</Label>
+                    <Input
+                      id={`doctor-role-${doctor.id}`}
+                      value={doctor.role}
+                      onChange={(event) =>
+                        setDoctors((current) =>
+                          current.map((item) =>
+                            item.id === doctor.id ? { ...item, role: event.target.value } : item,
+                          ),
+                        )
+                      }
+                    />
+                  </div>
+
+                  <label className="flex items-center gap-2 pb-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={doctor.active}
+                      onChange={(event) =>
+                        setDoctors((current) =>
+                          current.map((item) =>
+                            item.id === doctor.id ? { ...item, active: event.target.checked } : item,
+                          ),
+                        )
+                      }
+                    />
+                    予約受付中
+                  </label>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="schedule">
+          <Card>
+            <CardHeader className="space-y-3">
+              <SettingHeader
+                title="診療日・受付期間"
+                description="医院全体の基本診療時間、休診日、予約受付可能な期間を設定します。"
+                help={
+                  <>
+                    この画面では医院全体の基本ルールを設定します。曜日ごとに異なる診療時間や臨時休診は、今後の拡張項目です。
+                  </>
+                }
+              />
+              <SettingImpact>
+                患者向けWEB予約、空き枠判定、予約カレンダー
+              </SettingImpact>
+            </CardHeader>
+
+            <CardContent className="space-y-6">
+              <div>
+                <h3 className="mb-3 text-sm font-semibold">基本診療時間</h3>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {(["morningStart", "morningEnd", "afternoonStart", "afternoonEnd"] as const).map(
+                    (key, index) => (
+                      <div key={key}>
+                        <Label htmlFor={key}>
+                          {["午前 開始", "午前 終了", "午後 開始", "午後 終了"][index]}
+                        </Label>
+                        <Input
+                          id={key}
+                          type="time"
+                          value={schedule[key]}
+                          onChange={(event) =>
+                            setSchedule((current) => ({ ...current, [key]: event.target.value }))
+                          }
+                        />
+                      </div>
+                    ),
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t pt-5">
+                <div className="mb-3 flex items-center gap-1">
+                  <h3 className="text-sm font-semibold">休診日</h3>
+                  <HelpPopover title="休診日">
+                    通常予約を受け付けない曜日を設定します。チェックした曜日は休診日として扱う想定です。
+                  </HelpPopover>
+                </div>
+
+                <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
+                  {WEEKDAYS.map((day, index) => {
+                    const checked = schedule.closedDays.includes(index);
+                    return (
+                      <label
+                        key={day}
+                        className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-3 text-sm transition ${checked ? "border-primary bg-primary/5 font-medium" : "hover:bg-muted/50"}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(event) =>
+                            setSchedule((current) => ({
+                              ...current,
+                              closedDays: event.target.checked
+                                ? [...current.closedDays, index]
+                                : current.closedDays.filter((value) => value !== index),
+                            }))
+                          }
+                        />
+                        {day}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="border-t pt-5">
+                <div className="max-w-sm">
+                  <div className="flex items-center gap-1">
+                    <Label htmlFor="booking-days">予約受付期間</Label>
+                    <HelpPopover title="予約受付期間">
+                      今日から何日先まで患者が予約できるかを設定します。例：30日にすると、30日先までを予約対象にする想定です。
+                    </HelpPopover>
+                  </div>
+
+                  <div className="mt-1 flex items-center gap-2">
+                    <Input
+                      id="booking-days"
+                      type="number"
+                      min={1}
+                      value={schedule.bookingDays}
+                      onChange={(event) =>
+                        setSchedule((current) => ({ ...current, bookingDays: Number(event.target.value) }))
+                      }
+                    />
+                    <span className="shrink-0 text-sm text-muted-foreground">日先まで</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
