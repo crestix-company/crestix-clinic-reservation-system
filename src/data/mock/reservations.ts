@@ -76,8 +76,8 @@ reservationsToday.push(
     patientId: NAMED_PATIENTS.yamadaTaro.id,
     reservationTypeId: RESERVATION_TYPE_IDS.GENERAL,
     date: TODAY,
-    startTime: "",
-    endTime: "",
+    startTime: "09:00",
+    endTime: "09:30",
     source: "LINE",
     status: "WAITING",
   }),
@@ -103,8 +103,8 @@ reservationsToday.push(
     patientId: NAMED_PATIENTS.takahashiMisaki.id,
     reservationTypeId: RESERVATION_TYPE_IDS.GENERAL,
     date: TODAY,
-    startTime: "",
-    endTime: "",
+    startTime: "10:30",
+    endTime: "11:00",
     source: "COUNTER",
     status: "IN_CONSULTATION",
   }),
@@ -192,9 +192,8 @@ for (const cell of remainingCells) {
   for (let i = 0; i < cell.count; i += 1) {
     const status = statusPool[statusCursor % statusPool.length];
     statusCursor += 1;
-    const isGeneral = cell.type === RESERVATION_TYPE_IDS.GENERAL;
-    const startTime = isGeneral ? "" : EXAM_SLOTS[slotCursor % EXAM_SLOTS.length];
-    if (!isGeneral) slotCursor += 1;
+    const startTime = EXAM_SLOTS[slotCursor % EXAM_SLOTS.length];
+    slotCursor += 1;
     reservationsToday.push(
       buildReservation({
         patientId: nextFillerPatientId(),
@@ -215,43 +214,43 @@ reservationsToday.push({ ...buildReservation({ patientId: NAMED_PATIENTS.tanakaT
 
 // A longitudinal demo history for the patient detail screen.
 reservationsToday.push(
-  { ...buildReservation({ patientId: NAMED_PATIENTS.yamadaTaro.id, reservationTypeId: RESERVATION_TYPE_IDS.GENERAL, date: "2026-04-10", startTime: "", endTime: "", source: "WEB", status: "COMPLETED" }), doctorId: "dr-director" },
+  { ...buildReservation({ patientId: NAMED_PATIENTS.yamadaTaro.id, reservationTypeId: RESERVATION_TYPE_IDS.GENERAL, date: "2026-04-10", startTime: "09:00", endTime: "09:30", source: "WEB", status: "COMPLETED" }), doctorId: "dr-director" },
   { ...buildReservation({ patientId: NAMED_PATIENTS.yamadaTaro.id, reservationTypeId: RESERVATION_TYPE_IDS.GASTRO, date: "2026-06-15", startTime: "10:00", endTime: "10:30", source: "WEB", status: "COMPLETED" }), doctorId: "dr-director" },
-  { ...buildReservation({ patientId: NAMED_PATIENTS.yamadaTaro.id, reservationTypeId: RESERVATION_TYPE_IDS.GENERAL, date: "2026-11-09", startTime: "", endTime: "", source: "WEB", status: "RESERVED" }), doctorId: "dr-director" },
+  { ...buildReservation({ patientId: NAMED_PATIENTS.yamadaTaro.id, reservationTypeId: RESERVATION_TYPE_IDS.GENERAL, date: "2026-11-09", startTime: "09:30", endTime: "10:00", source: "WEB", status: "RESERVED" }), doctorId: "dr-director" },
 );
 
 // --- Additional reservations on other October dates, for the calendar, --
 // --- week/month views and the analytics screen.                        --
 const otherDateSpecs: { date: string; type: string; source: ReservationSource; status: ReservationStatus; time: string }[] = [
   { date: "2026-10-01", type: RESERVATION_TYPE_IDS.GASTRO, source: "WEB", status: "COMPLETED", time: "09:30" },
-  { date: "2026-10-01", type: RESERVATION_TYPE_IDS.GENERAL, source: "COUNTER", status: "COMPLETED", time: "" },
+  { date: "2026-10-01", type: RESERVATION_TYPE_IDS.GENERAL, source: "COUNTER", status: "COMPLETED", time: "09:30" },
   { date: "2026-10-02", type: RESERVATION_TYPE_IDS.COLON, source: "LINE", status: "COMPLETED", time: "10:30" },
   { date: "2026-10-02", type: RESERVATION_TYPE_IDS.CHECKUP, source: "EHR", status: "COMPLETED", time: "09:00" },
-  { date: "2026-10-03", type: RESERVATION_TYPE_IDS.GENERAL, source: "LINE", status: "COMPLETED", time: "" },
+  { date: "2026-10-03", type: RESERVATION_TYPE_IDS.GENERAL, source: "LINE", status: "COMPLETED", time: "10:00" },
   { date: "2026-10-03", type: RESERVATION_TYPE_IDS.GASTRO, source: "GOOGLE", status: "COMPLETED", time: "14:00" },
   { date: "2026-10-04", type: RESERVATION_TYPE_IDS.OTHER, source: "WEB", status: "COMPLETED", time: "11:00" },
-  { date: "2026-10-04", type: RESERVATION_TYPE_IDS.GENERAL, source: "WEB", status: "COMPLETED", time: "" },
+  { date: "2026-10-04", type: RESERVATION_TYPE_IDS.GENERAL, source: "WEB", status: "COMPLETED", time: "10:30" },
   { date: "2026-10-06", type: RESERVATION_TYPE_IDS.GASTRO, source: "WEB", status: "RESERVED", time: "09:30" },
   { date: "2026-10-06", type: RESERVATION_TYPE_IDS.COLON, source: "LINE", status: "RESERVED", time: "10:30" },
-  { date: "2026-10-06", type: RESERVATION_TYPE_IDS.GENERAL, source: "COUNTER", status: "RESERVED", time: "" },
+  { date: "2026-10-06", type: RESERVATION_TYPE_IDS.GENERAL, source: "COUNTER", status: "RESERVED", time: "11:00" },
   { date: "2026-10-07", type: RESERVATION_TYPE_IDS.CHECKUP, source: "EHR", status: "RESERVED", time: "09:00" },
   { date: "2026-10-07", type: RESERVATION_TYPE_IDS.GASTRO, source: "LINE", status: "RESERVED", time: "13:30" },
-  { date: "2026-10-08", type: RESERVATION_TYPE_IDS.GENERAL, source: "WEB", status: "RESERVED", time: "" },
+  { date: "2026-10-08", type: RESERVATION_TYPE_IDS.GENERAL, source: "WEB", status: "RESERVED", time: "13:00" },
   { date: "2026-10-08", type: RESERVATION_TYPE_IDS.COLON, source: "GOOGLE", status: "RESERVED", time: "11:00" },
   { date: "2026-10-09", type: RESERVATION_TYPE_IDS.GASTRO, source: "WEB", status: "RESERVED", time: "10:00" },
   { date: "2026-10-09", type: RESERVATION_TYPE_IDS.OTHER, source: "EHR", status: "RESERVED", time: "14:30" },
   { date: "2026-10-12", type: RESERVATION_TYPE_IDS.CHECKUP, source: "WEB", status: "RESERVED", time: "09:00" },
   { date: "2026-10-13", type: RESERVATION_TYPE_IDS.GASTRO, source: "LINE", status: "RESERVED", time: "09:30" },
-  { date: "2026-10-14", type: RESERVATION_TYPE_IDS.GENERAL, source: "LINE", status: "RESERVED", time: "" },
+  { date: "2026-10-14", type: RESERVATION_TYPE_IDS.GENERAL, source: "LINE", status: "RESERVED", time: "13:30" },
   { date: "2026-10-15", type: RESERVATION_TYPE_IDS.COLON, source: "WEB", status: "RESERVED", time: "11:30" },
   { date: "2026-10-16", type: RESERVATION_TYPE_IDS.GASTRO, source: "GOOGLE", status: "RESERVED", time: "13:00" },
-  { date: "2026-10-19", type: RESERVATION_TYPE_IDS.GENERAL, source: "WEB", status: "RESERVED", time: "" },
+  { date: "2026-10-19", type: RESERVATION_TYPE_IDS.GENERAL, source: "WEB", status: "RESERVED", time: "13:00" },
   { date: "2026-10-20", type: RESERVATION_TYPE_IDS.CHECKUP, source: "EHR", status: "RESERVED", time: "09:00" },
   { date: "2026-10-21", type: RESERVATION_TYPE_IDS.GASTRO, source: "WEB", status: "RESERVED", time: "10:00" },
-  { date: "2026-10-21", type: RESERVATION_TYPE_IDS.GENERAL, source: "COUNTER", status: "RESERVED", time: "" },
+  { date: "2026-10-21", type: RESERVATION_TYPE_IDS.GENERAL, source: "COUNTER", status: "RESERVED", time: "11:00" },
   { date: "2026-10-23", type: RESERVATION_TYPE_IDS.COLON, source: "LINE", status: "RESERVED", time: "10:30" },
   { date: "2026-10-27", type: RESERVATION_TYPE_IDS.GASTRO, source: "WEB", status: "RESERVED", time: "13:30" },
-  { date: "2026-10-28", type: RESERVATION_TYPE_IDS.GENERAL, source: "LINE", status: "RESERVED", time: "" },
+  { date: "2026-10-28", type: RESERVATION_TYPE_IDS.GENERAL, source: "LINE", status: "RESERVED", time: "13:30" },
   { date: "2026-10-30", type: RESERVATION_TYPE_IDS.CHECKUP, source: "WEB", status: "RESERVED", time: "14:00" },
 ];
 
