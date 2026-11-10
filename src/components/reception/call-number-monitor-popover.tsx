@@ -1,13 +1,62 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, Monitor, UsersRound } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ExternalLink, Grip, Monitor, UsersRound } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { listTodayReceptionQueue } from "@/lib/services/reception-service";
+
+const STORAGE_KEY = "crestix-call-monitor-position";
+const DEFAULT_POSITION = { x: 24, y: 24 };
 
 export function CallNumberMonitorPopover() {
   const queue = useMemo(() => listTodayReceptionQueue(), []);
   const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState(DEFAULT_POSITION);
+  const [dragging, setDragging] = useState(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(STORAGE_KEY);
+      if (!saved) return;
+      const parsed = JSON.parse(saved) as { x?: number; y?: number };
+      if (typeof parsed.x === "number" && typeof parsed.y === "number") {
+        setPosition({
+          x: Math.max(8, Math.min(parsed.x, window.innerWidth - 80)),
+          y: Math.max(8, Math.min(parsed.y, window.innerHeight - 56)),
+        });
+      }
+    } catch {
+      window.localStorage.removeItem(STORAGE_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    function handleMove(event: PointerEvent) {
+      if (!dragging) return;
+
+      const nextX = Math.max(8, Math.min(event.clientX - dragOffset.current.x, window.innerWidth - 80));
+      const nextY = Math.max(8, Math.min(event.clientY - dragOffset.current.y, window.innerHeight - 56));
+      setPosition({ x: nextX, y: nextY });
+    }
+
+    function handleUp() {
+      if (!dragging) return;
+      setDragging(false);
+      setPosition((current) => {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+        return current;
+      });
+    }
+
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
+
+    return () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+    };
+  }, [dragging]);
 
   const current =
     queue.find((item) => item.status === "CALLED") ??
@@ -16,33 +65,60 @@ export function CallNumberMonitorPopover() {
   const next = queue.find((item) => item.status === "WAITING") ?? null;
   const waitingCount = queue.filter((item) => item.status === "WAITING" || item.status === "CALLED").length;
 
+  function startDrag(event: React.PointerEvent<HTMLButtonElement>) {
+    if (event.button !== 0) return;
+    const rect = event.currentTarget.parentElement?.parentElement?.getBoundingClientRect();
+    if (!rect) return;
+
+    dragOffset.current = {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    };
+    setDragging(true);
+    setOpen(false);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  }
+
   return (
     <div
-      className="fixed bottom-5 right-5 z-40 max-sm:bottom-3 max-sm:right-3"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
+      className="fixed z-40"
+      style={{ left: position.x, top: position.y }}
+      onMouseEnter={() => !dragging && setOpen(true)}
+      onMouseLeave={() => !dragging && setOpen(false)}
     >
       <div className="relative">
-        <button
-          type="button"
-          aria-label="院内モニターの呼び出し状況"
-          aria-expanded={open}
-          onClick={() => setOpen((value) => !value)}
-          onFocus={() => setOpen(true)}
-          className="flex items-center gap-2 rounded-full border bg-background px-3 py-2 text-sm font-medium shadow-lg transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <span className="flex size-8 items-center justify-center rounded-full bg-slate-950 text-white">
-            <Monitor className="size-4" />
-          </span>
-          <span className="hidden sm:inline">院内モニター</span>
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary tabular-nums">
-            {current?.receptionNumber ?? "—"}
-          </span>
-        </button>
+        <div className="flex items-center rounded-full border bg-background shadow-lg">
+          <button
+            type="button"
+            aria-label="院内モニターを移動"
+            title="ドラッグして移動"
+            onPointerDown={startDrag}
+            className={`flex size-9 touch-none cursor-grab items-center justify-center rounded-l-full border-r text-muted-foreground transition hover:bg-muted hover:text-foreground ${dragging ? "cursor-grabbing bg-muted" : ""}`}
+          >
+            <Grip className="size-4" />
+          </button>
+
+          <button
+            type="button"
+            aria-label="院内モニターの呼び出し状況"
+            aria-expanded={open}
+            onClick={() => setOpen((value) => !value)}
+            onFocus={() => setOpen(true)}
+            className="flex items-center gap-2 rounded-r-full px-3 py-2 text-sm font-medium transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <span className="flex size-8 items-center justify-center rounded-full bg-slate-950 text-white">
+              <Monitor className="size-4" />
+            </span>
+            <span className="hidden sm:inline">院内モニター</span>
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary tabular-nums">
+              {current?.receptionNumber ?? "—"}
+            </span>
+          </button>
+        </div>
 
         <div
-          className={`absolute bottom-full right-0 mb-2 w-[310px] origin-bottom-right rounded-xl border bg-background p-4 shadow-xl transition-all max-sm:w-[calc(100vw-24px)] ${
-            open ? "visible scale-100 opacity-100" : "pointer-events-none invisible scale-95 opacity-0"
+          className={`absolute left-0 top-full mt-2 w-[310px] origin-top-left rounded-xl border bg-background p-4 shadow-xl transition-all max-sm:w-[calc(100vw-24px)] ${
+            open && !dragging ? "visible scale-100 opacity-100" : "pointer-events-none invisible scale-95 opacity-0"
           }`}
         >
           <div className="mb-3 flex items-center justify-between gap-3">
@@ -84,7 +160,7 @@ export function CallNumberMonitorPopover() {
           </div>
 
           <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
-            受付番号のみを表示し、患者氏名は院内モニターには表示しない想定です。
+            左のハンドルをドラッグすると、院内モニターの位置を自由に移動できます。位置はこのブラウザーに保存されます。
           </p>
         </div>
       </div>
