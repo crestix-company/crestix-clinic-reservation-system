@@ -30,9 +30,9 @@ export default function AdminDashboardPage() {
   const [statusFilter, setStatusFilter] = useState(ALL);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
-  const [date, setDate] = useState(getToday());
+  const today = getToday();
 
-  const todays = reservations.filter((reservation) => reservation.reservationDate === date);
+  const todays = reservations.filter((reservation) => reservation.reservationDate === today);
   const active = todays.filter((reservation) => reservation.status !== "CANCELLED");
   const filtered = todays.filter((reservation) => {
     const query = keyword.trim().toLowerCase();
@@ -44,7 +44,7 @@ export default function AdminDashboardPage() {
   const selected = reservations.find((reservation) => reservation.id === selectedId) ?? null;
 
   return <div className="space-y-4">
-    <header className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-semibold tracking-tight">本日の予約・受付</h1><p className="text-sm text-muted-foreground">デモ日付: {getToday()} ｜ 予約と受付状態をまとめて確認</p></div><div className="flex items-center gap-2"><Input aria-label="対象日" type="date" className="w-36" value={date} onChange={(event) => setDate(event.target.value)} /><Button onClick={() => setNewOpen(true)}><Plus className="size-4" />新規予約</Button></div></header>
+    <header className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-semibold tracking-tight">本日の予約・受付</h1><p className="text-sm text-muted-foreground">本日 {today} の予約と受付状態をまとめて確認</p></div><Button onClick={() => setNewOpen(true)}><Plus className="size-4" />新規予約</Button></header>
     <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
       <ReservationKpi active={active} types={types} />
       <KpiCard label="未受付" value={active.filter((reservation) => reservation.status === "RESERVED").length} unit="件" icon={Users} accent="slate" />
@@ -60,9 +60,9 @@ export default function AdminDashboardPage() {
       </div>
       <div className="rounded-lg border"><div className={`hidden gap-2 border-b bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground xl:grid ${columns}`}><span>予約時間</span><span>患者名</span><span>初診・再診</span><span>診療メニュー</span><span>担当医</span><span>予約経路</span><span>受付状態</span><span>操作</span></div>
         <div className="max-h-[calc(100vh-355px)] min-h-40 overflow-y-auto">{filtered.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">該当する予約がありません</p> : filtered.map((reservation) => {
-          const pastVisits = getPatientSummary(reservation.patient, reservations, date).history.filter(({ reservation: visit }) => visit.status === "COMPLETED" && visit.reservationDate < reservation.reservationDate).length;
+          const pastVisits = getPatientSummary(reservation.patient, reservations, today).history.filter(({ reservation: visit }) => visit.status === "COMPLETED" && visit.reservationDate < reservation.reservationDate).length;
           return <div key={reservation.id} className={`grid gap-2 border-b px-3 py-2 text-sm last:border-b-0 xl:items-center ${columns}`}>
-            <span className="font-semibold">{reservation.startTime || "当日順番"}</span>
+            <span className="font-semibold">{reservation.startTime || "時間指定なし"}</span>
             <span className="min-w-0 truncate font-medium"><Link href={`/admin/patients/${reservation.patientId}`} className="text-primary hover:underline">{reservation.patient.name}</Link><span className="block truncate text-[11px] font-normal text-muted-foreground">{reservation.id}</span></span>
             <span>{pastVisits > 0 ? "再診" : "初診"}</span>
             <span className="truncate">{types.find((type) => type.id === reservation.reservationTypeId)?.name ?? reservation.reservationType.name}</span>
@@ -74,7 +74,7 @@ export default function AdminDashboardPage() {
       </div>
     </CardContent></Card>
     <ReservationDetailDialog reservation={selected} open={!!selected} onOpenChange={(open) => !open && setSelectedId(null)} onStatusChange={updateStatus} onUpdate={updateReservation} />
-    <NewReservationDialog open={newOpen} onOpenChange={setNewOpen} onCreate={addReservation} initialDate={date} />
+    <NewReservationDialog open={newOpen} onOpenChange={setNewOpen} onCreate={addReservation} initialDate={today} />
   </div>;
 }
 
