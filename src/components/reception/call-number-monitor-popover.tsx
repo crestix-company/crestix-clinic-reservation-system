@@ -1,14 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { ExternalLink, Grip, Monitor, UsersRound } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { listTodayReceptionQueue } from "@/lib/services/reception-service";
 
 const STORAGE_KEY = "crestix-call-monitor-position";
 const DEFAULT_POSITION = { x: 24, y: 24 };
 
 export function CallNumberMonitorPopover() {
+  const router = useRouter();
   const queue = useMemo(() => listTodayReceptionQueue(), []);
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState(DEFAULT_POSITION);
@@ -126,14 +127,17 @@ export function CallNumberMonitorPopover() {
               <div className="text-sm font-semibold">院内モニター</div>
               <div className="text-xs text-muted-foreground">患者呼び出し状況</div>
             </div>
-            <Link
-              href="/display"
-              target="_blank"
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                router.push("/display");
+              }}
               className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
             >
               モニターを開く
               <ExternalLink className="size-3" />
-            </Link>
+            </button>
           </div>
 
           <div className="grid grid-cols-2 overflow-hidden rounded-xl border">
