@@ -58,8 +58,8 @@ export default function AdminDashboardPage() {
     <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
       <ReservationKpi active={active} types={types} />
       <KpiCard label="来院前" value={active.filter((reservation) => reservation.status === "RESERVED").length} unit="件" icon={Users} accent="slate" />
-      <KpiCard label="待機中" value={active.filter((reservation) => ["CHECKED_IN", "WAITING", "CALLED"].includes(reservation.status)).length} unit="件" icon={Clock3} accent="amber" />
-      <KpiCard label="診察中" value={active.filter((reservation) => reservation.status === "IN_CONSULTATION").length} unit="件" icon={Stethoscope} accent="teal" />
+      <KpiCard label="受付済・待機中" value={active.filter((reservation) => ["CHECKED_IN", "WAITING", "CALLED"].includes(reservation.status)).length} unit="件" icon={Clock3} accent="amber" />
+      <KpiCard label="診察中・完了" value={active.filter((reservation) => ["IN_CONSULTATION", "COMPLETED"].includes(reservation.status)).length} unit="件" icon={Stethoscope} accent="teal" />
     </div>
     <Card><CardContent className="space-y-3 pt-4">
       <div className="space-y-2">
