@@ -1,4 +1,7 @@
+"use client";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RoleGuard } from "@/components/admin/role-guard";
 import { Badge } from "@/components/ui/badge";
 import { clinics, serviceIdentity } from "@/data/mock/clinics";
 
@@ -14,6 +17,7 @@ export default function SettingsPage() {
   const clinic = clinics[0];
 
   return (
+    <RoleGuard allowed={["DEVELOPER"]}>
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">システム設定</h1>
@@ -82,5 +86,6 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
     </div>
+    </RoleGuard>
   );
 }
