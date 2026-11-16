@@ -101,6 +101,7 @@ function makePatient(lastName: string, firstName: string, gender: "M" | "F"): Pa
     kana: `${kanaLast} ${kanaFirst}`,
     phone: phoneFor(autoSeq),
     birthDate: birthDateFor(autoSeq + (gender === "F" ? 11 : 0)),
+    ehrPatientId: String(10000000 + autoSeq),
   };
 }
 
