@@ -9,6 +9,7 @@ import { useDemoStore } from "@/components/admin/demo-store";
 import { getToday } from "@/lib/services/reservation-service";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { RoleGuard } from "@/components/admin/role-guard";
 
 export default function AnalyticsPage() {
   const { reservations, types } = useDemoStore();
@@ -23,6 +24,7 @@ export default function AnalyticsPage() {
   );
 
   return (
+    <RoleGuard allowed={["DEVELOPER", "DIRECTOR"]}>
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">予約集計</h1>
@@ -110,5 +112,6 @@ export default function AnalyticsPage() {
         </div>
       </section>
     </div>
+    </RoleGuard>
   );
 }
