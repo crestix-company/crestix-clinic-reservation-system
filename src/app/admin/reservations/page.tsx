@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import type { ReservationSource, ReservationStatus } from "@/types/domain";
 
 const PAGE_SIZE = 10;
 const ALL = "ALL";
-const patientColumns = "xl:grid-cols-[90px_minmax(110px,1.1fr)_minmax(100px,1fr)_120px_85px_85px_65px_100px_66px]";
+const patientColumns = "xl:grid-cols-[100px_110px_minmax(110px,1.1fr)_minmax(100px,1fr)_120px_85px_85px_65px_100px_66px]";
 
 export default function ReservationsListPage() {
   const { reservations: allReservations, types, updateReservation, updateStatus } = useDemoStore();
@@ -94,11 +94,12 @@ export default function ReservationsListPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">患者・予約管理</h1>
-        <p className="text-sm text-muted-foreground">
-          予約から探す場合と患者から探す場合を、同じ画面で切り替えて確認できます
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">患者・予約管理</h1>
+          <p className="text-sm text-muted-foreground">過去・未来の予約検索、予約変更、問い合わせ対応、患者履歴確認に使用します。</p>
+        </div>
+        <Link href="/admin/patients/new" className={buttonVariants()}><Plus className="size-4" />初診患者を作成</Link>
       </div>
 
       <Tabs value={tab} onValueChange={handleTabChange}>
@@ -254,6 +255,7 @@ export default function ReservationsListPage() {
               <div
                 className={`hidden gap-2 border-b bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground xl:grid ${patientColumns}`}
               >
+                <span>Patient ID</span>
                 <span>診察券番号</span>
                 <span>患者名</span>
                 <span>フリガナ</span>
@@ -277,6 +279,7 @@ export default function ReservationsListPage() {
                         className={`grid gap-1 border-b px-3 py-2 text-sm last:border-b-0 xl:items-center xl:gap-2 ${patientColumns}`}
                       >
                         <span className="truncate font-mono text-xs text-muted-foreground">{patient.id}</span>
+                        <span className="truncate font-mono text-xs text-muted-foreground">{patient.ehrPatientId ?? "未連携"}</span>
                         <Link
                           href={`/admin/patients/${patient.id}`}
                           className="truncate font-medium text-primary hover:underline"
