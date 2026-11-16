@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { CalendarCheck, Clock3, Plus, Search, Stethoscope, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -134,12 +134,28 @@ export default function AdminDashboardPage() {
 
 function ReservationKpi({ active, types }: { active: EnrichedReservation[]; types: ReservationType[] }) {
   const [open, setOpen] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rows = types.map((type) => ({ ...type, count: active.filter((reservation) => reservation.reservationTypeId === type.id).length })).filter((type) => type.count > 0);
-  return <div className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} onFocus={() => setOpen(true)} onBlur={() => setOpen(false)} onKeyDown={(event) => event.key === "Escape" && setOpen(false)}>
-    <button type="button" className="w-full rounded-xl text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" aria-label="本日の予約の診療メニュー別内訳" aria-expanded={open} onClick={() => setOpen(true)}><KpiCard label="本日の予約総数" value={active.length} unit="件" icon={CalendarCheck} accent="blue" /></button>
-    <div className={`absolute left-0 top-full z-20 mt-2 w-64 rounded-lg border bg-popover p-3 text-sm text-popover-foreground shadow-lg transition ${open ? "visible opacity-100" : "pointer-events-none invisible opacity-0"}`}>
-      <div className="mb-2 font-semibold">診療メニュー別内訳</div>{rows.length === 0 ? <p className="text-muted-foreground">予約はありません</p> : rows.map((type) => <div key={type.id} className="flex items-center gap-2 py-0.5"><span className="size-2.5 rounded-full" style={{ backgroundColor: type.color }} /><span className="flex-1">{type.name}</span><span className="tabular-nums">{type.count}件</span></div>)}
-      <div className="mt-2 flex justify-between border-t pt-2 font-semibold"><span>合計</span><span>{active.length}件</span></div>
+
+  const keepOpen = () => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    setOpen(true);
+  };
+  const closeWithDelay = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setOpen(false), 450);
+  };
+
+  return <div className="relative" onMouseEnter={keepOpen} onMouseLeave={closeWithDelay} onFocus={keepOpen} onBlur={closeWithDelay} onKeyDown={(event) => event.key === "Escape" && setOpen(false)}>
+    <button type="button" className="w-full rounded-xl text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" aria-label="本日の予約の診療メニュー別内訳" aria-expanded={open} onClick={() => setOpen((value) => !value)}><KpiCard label="本日の予約総数" value={active.length} unit="件" icon={CalendarCheck} accent="blue" /></button>
+    <div className={`absolute left-0 top-full z-20 w-64 pt-2 transition ${open ? "visible opacity-100" : "pointer-events-none invisible opacity-0"}`} onMouseEnter={keepOpen} onMouseLeave={closeWithDelay}>
+      <div className="rounded-lg border bg-popover p-3 text-sm text-popover-foreground shadow-lg">
+        <div className="mb-2 font-semibold">診療メニュー別内訳</div>{rows.length === 0 ? <p className="text-muted-foreground">予約はありません</p> : rows.map((type) => <div key={type.id} className="flex items-center gap-2 py-0.5"><span className="size-2.5 rounded-full" style={{ backgroundColor: type.color }} /><span className="flex-1">{type.name}</span><span className="tabular-nums">{type.count}件</span></div>)}
+        <div className="mt-2 flex justify-between border-t pt-2 font-semibold"><span>合計</span><span>{active.length}件</span></div>
+      </div>
     </div>
   </div>;
 }
