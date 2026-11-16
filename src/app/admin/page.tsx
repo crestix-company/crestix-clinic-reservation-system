@@ -42,10 +42,13 @@ export default function AdminDashboardPage() {
 
   const todays = reservations.filter((reservation) => reservation.reservationDate === today);
   const active = todays.filter((reservation) => reservation.status !== "CANCELLED");
+  const noTimeReservations = active
+    .filter((reservation) => !reservation.startTime)
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   const currentTab = RECEPTION_TABS.find((tab) => tab.value === receptionTab) ?? RECEPTION_TABS[0];
   const filtered = todays.filter((reservation) => {
     const query = keyword.trim().toLowerCase();
-    return currentTab.statuses.includes(reservation.status) &&
+    return !!reservation.startTime && currentTab.statuses.includes(reservation.status) &&
       (!query || [reservation.patient.name, reservation.patient.phone, reservation.patient.id, reservation.id].some((value) => value.toLowerCase().includes(query))) &&
       (doctorFilter === ALL || reservation.doctorId === doctorFilter) &&
       (typeFilter === ALL || reservation.reservationTypeId === typeFilter) &&
@@ -64,6 +67,33 @@ export default function AdminDashboardPage() {
       <KpiCard label="受付済・待機中" value={active.filter((reservation) => ["CHECKED_IN", "WAITING", "CALLED"].includes(reservation.status)).length} unit="件" icon={Clock3} accent="amber" />
       <KpiCard label="診察中・完了" value={active.filter((reservation) => ["IN_CONSULTATION", "COMPLETED"].includes(reservation.status)).length} unit="件" icon={Stethoscope} accent="teal" />
     </div>
+    {noTimeReservations.length > 0 && (
+      <Card className="border-amber-200 bg-amber-50/40">
+        <CardContent className="space-y-3 pt-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="font-semibold text-amber-950">時間指定なし予約</h2>
+              <p className="text-xs text-amber-800">時間指定予約に埋もれないよう、常に一覧上部へ固定表示します。</p>
+            </div>
+            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">{noTimeReservations.length}件</span>
+          </div>
+          <div className="rounded-lg border bg-background">
+            {noTimeReservations.map((reservation) => (
+              <div key={reservation.id} className="grid gap-2 border-b px-3 py-2 text-sm last:border-b-0 md:grid-cols-[minmax(180px,1.5fr)_minmax(120px,1fr)_minmax(100px,1fr)_90px] md:items-center">
+                <div className="min-w-0 font-medium">
+                  <Link href={`/admin/patients/${reservation.patientId}`} className="text-primary hover:underline">{reservation.patient.name}</Link>
+                  <span className="block truncate text-[11px] font-normal text-muted-foreground">Patient ID: {reservation.patient.id}</span>
+                </div>
+                <span>{types.find((type) => type.id === reservation.reservationTypeId)?.name ?? reservation.reservationType.name}</span>
+                <ReservationStatusBadge status={reservation.status} />
+                <Button size="sm" variant="outline" onClick={() => setSelectedId(reservation.id)}>詳細</Button>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    )}
+
     <Card><CardContent className="space-y-3 pt-4">
       <div className="space-y-2">
         <Tabs value={receptionTab} onValueChange={(value) => { setReceptionTab(value as ReceptionTab); setStatusFilter(ALL); }}>
