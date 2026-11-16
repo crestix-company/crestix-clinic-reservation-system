@@ -31,7 +31,8 @@ export function ReservationCalendar({ view, days, reservations, types, schedule,
     .map((reservation) => reservation.startTime)
     .filter((slot) => slot && !configuredSlots.includes(slot));
   const slots = [...new Set([...configuredSlots, ...extraSlots].sort())];
-  const columns = view === "day" ? "76px minmax(0,1fr)" : "60px repeat(5,minmax(0,1fr))";\n  const slotKey = slots.join(",");
+  const columns = view === "day" ? "76px minmax(0,1fr)" : "60px repeat(5,minmax(0,1fr))";
+  const slotKey = slots.join(",");
 
   useEffect(() => {
     if (view !== "day" || format(days[0], "yyyy-MM-dd") !== getToday()) return;
@@ -64,7 +65,8 @@ export function ReservationCalendar({ view, days, reservations, types, schedule,
         ))}
       </div>
 
-      {slots.map((slot, slotIndex) => (\n        <div key={slot} data-slot-index={slotIndex} className="grid border-b last:border-b-0" style={{ gridTemplateColumns: columns }}>
+      {slots.map((slot, slotIndex) => (
+        <div key={slot} data-slot-index={slotIndex} className="grid border-b last:border-b-0" style={{ gridTemplateColumns: columns }}>
           <div className="border-r px-2 py-2 text-xs text-muted-foreground">{slot}</div>
           {days.map((day) => {
             const date = format(day, "yyyy-MM-dd");
