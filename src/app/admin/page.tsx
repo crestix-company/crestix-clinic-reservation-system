@@ -97,10 +97,10 @@ export default function AdminDashboardPage() {
     <Card><CardContent className="space-y-3 pt-4">
       <div className="space-y-2">
         <Tabs value={receptionTab} onValueChange={(value) => { setReceptionTab(value as ReceptionTab); setStatusFilter(ALL); }}>
-          <TabsList className="grid h-auto w-full grid-cols-3">
+          <TabsList className="grid h-auto w-full grid-cols-3 bg-muted/70 p-1">
             {RECEPTION_TABS.map((tab) => {
               const count = active.filter((reservation) => tab.statuses.includes(reservation.status)).length;
-              return <TabsTrigger key={tab.value} value={tab.value} className="gap-2 py-2"><span>{tab.label}</span><span className="rounded-full bg-muted px-2 py-0.5 text-[11px] tabular-nums text-muted-foreground">{count}</span></TabsTrigger>;
+              return <TabsTrigger key={tab.value} value={tab.value} className="gap-2 border-0 py-2 shadow-none data-active:bg-primary/10 data-active:text-primary data-active:shadow-none hover:bg-background/50"><span>{tab.label}</span><span className="rounded-full bg-background/70 px-2 py-0.5 text-[11px] tabular-nums text-muted-foreground">{count}</span></TabsTrigger>;
             })}
           </TabsList>
         </Tabs>
