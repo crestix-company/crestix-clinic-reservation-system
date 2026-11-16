@@ -1,27 +1,46 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReservationTypeChart } from "@/components/dashboard/reservation-type-chart";
 import { ReservationSourceChart } from "@/components/dashboard/reservation-source-chart";
-import { getMonthlyAnalytics } from "@/lib/services/analytics-service";
+import { getAnalyticsForRange } from "@/lib/services/analytics-service";
 import { useDemoStore } from "@/components/admin/demo-store";
 import { getToday } from "@/lib/services/reservation-service";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export default function AnalyticsPage() {
   const { reservations, types } = useDemoStore();
-  const analytics = useMemo(() => getMonthlyAnalytics(getToday(), reservations, types), [reservations, types]);
+  const today = getToday();
+  const monthStart = `${today.slice(0, 7)}-01`;
+  const [startDate, setStartDate] = useState(monthStart);
+  const [endDate, setEndDate] = useState(today);
+  const [appliedRange, setAppliedRange] = useState({ start: monthStart, end: today });
+  const analytics = useMemo(
+    () => getAnalyticsForRange(appliedRange.start, appliedRange.end, reservations, types),
+    [appliedRange, reservations, types],
+  );
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">予約集計</h1>
-        <p className="text-sm text-muted-foreground">予約数と予約経路を診療メニューごとに比較できます</p>
+        <p className="text-sm text-muted-foreground">期間を指定して、予約数と予約経路を診療メニューごとに比較できます</p>
       </div>
+
+      <Card>
+        <CardContent className="flex flex-wrap items-end gap-3 px-6 py-5">
+          <div><div className="mb-1 text-xs text-muted-foreground">開始日</div><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
+          <div><div className="mb-1 text-xs text-muted-foreground">終了日</div><Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
+          <Button onClick={() => setAppliedRange({ start: startDate, end: endDate })} disabled={!startDate || !endDate || startDate > endDate}>期間を適用</Button>
+          <div className="text-sm text-muted-foreground">{appliedRange.start} 〜 {appliedRange.end}</div>
+        </CardContent>
+      </Card>
 
       <Card className="w-fit">
         <CardContent className="px-6 py-5">
-          <div className="text-sm text-muted-foreground">今月の予約総数</div>
+          <div className="text-sm text-muted-foreground">期間内の予約総数</div>
           <div className="mt-1 text-3xl font-semibold tabular-nums">{analytics.totalCount}件</div>
         </CardContent>
       </Card>
@@ -30,7 +49,7 @@ export default function AnalyticsPage() {
         <Card>
           <CardHeader>
             <CardTitle>予約内容別</CardTitle>
-            <CardDescription>今月の予約メニューごとの件数</CardDescription>
+            <CardDescription>指定期間の予約メニューごとの件数</CardDescription>
           </CardHeader>
           <CardContent>
             <ReservationTypeChart data={analytics.byType} />
@@ -39,7 +58,7 @@ export default function AnalyticsPage() {
         <Card>
           <CardHeader>
             <CardTitle>予約経路別</CardTitle>
-            <CardDescription>今月、どこから予約が入ったか</CardDescription>
+            <CardDescription>指定期間にどこから予約が入ったか</CardDescription>
           </CardHeader>
           <CardContent>
             <ReservationSourceChart data={analytics.bySource} />
