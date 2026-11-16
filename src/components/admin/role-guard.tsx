@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useDemoStore, type DemoRole } from "@/components/admin/demo-store";
+import type { ReactNode } from "react";
 
-export function RoleGuard({ allowed, children }: { allowed: DemoRole[]; children: React.ReactNode }) {
+export function RoleGuard({ allowed, children }: { allowed: DemoRole[]; children: ReactNode }) {
   const { role } = useDemoStore();
   if (allowed.includes(role)) return <>{children}</>;
 
