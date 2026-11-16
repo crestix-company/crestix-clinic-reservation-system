@@ -24,7 +24,9 @@ export function checkBookingAvailability(slot: BookingSlot, reservations: Reserv
   );
   if (exception) return { available: false, reason: exception.reason ? `予約停止：${exception.reason}` : "この日時は予約受付を停止しています。", booked: 0, capacity: type.maxConcurrent ?? type.capacity ?? 1 };
 
-  if (!slot.time) return { available: false, reason: "予約時間を指定してください。", booked: 0, capacity: type.maxConcurrent ?? type.capacity ?? 1 };
+  if (!slot.time) {
+    return { available: true, reason: "時間指定なし予約", booked: dailyCount, capacity: type.dailyLimit ?? Number.MAX_SAFE_INTEGER };
+  }
   if (!((slot.time >= schedule.morningStart && slot.time < schedule.morningEnd) || (slot.time >= schedule.afternoonStart && slot.time < schedule.afternoonEnd))) {
     return { available: false, reason: "診療時間外です。", booked: 0, capacity: type.maxConcurrent ?? type.capacity ?? 1 };
   }
