@@ -31,7 +31,7 @@ export function ReservationCalendar({ view, days, reservations, types, schedule,
     .map((reservation) => reservation.startTime)
     .filter((slot) => slot && !configuredSlots.includes(slot));
   const slots = [...new Set([...configuredSlots, ...extraSlots].sort())];
-  const columns = view === "day" ? "76px minmax(0,1fr)" : "60px repeat(5,minmax(0,1fr))";
+  const columns = view === "day" ? "76px minmax(0,1fr)" : "60px repeat(5,minmax(0,1fr))";\n  const slotKey = slots.join(",");
 
   useEffect(() => {
     if (view !== "day" || format(days[0], "yyyy-MM-dd") !== getToday()) return;
@@ -48,7 +48,7 @@ export function ReservationCalendar({ view, days, reservations, types, schedule,
     if (!container) return;
     const row = container.querySelector<HTMLElement>(`[data-slot-index="${nearestIndex}"]`);
     if (row) container.scrollTop = Math.max(0, row.offsetTop - 40);
-  }, [view, days, slots]);
+  }, [view, days, slotKey]);
 
   return (
     <div ref={scrollRef} className="max-h-[calc(100vh-245px)] overflow-y-auto rounded-lg border">
