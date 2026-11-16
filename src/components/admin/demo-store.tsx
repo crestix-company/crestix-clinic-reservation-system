@@ -7,7 +7,8 @@ import { listEnrichedReservations } from "@/lib/services/reservation-service";
 import type { EnrichedReservation } from "@/lib/services/types";
 import type { Doctor, ReservationStatus, ReservationType } from "@/types/domain";
 
-type ClinicSchedule = { morningStart: string; morningEnd: string; afternoonStart: string; afternoonEnd: string; closedDays: number[]; bookingDays: number };
+type BookingException = { id: string; date: string; reservationTypeId: string; startTime?: string; endTime?: string; reason?: string };
+type ClinicSchedule = { morningStart: string; morningEnd: string; afternoonStart: string; afternoonEnd: string; closedDays: number[]; bookingDays: number; exceptions: BookingException[] };
 type DemoStore = {
   reservations: EnrichedReservation[];
   doctors: Doctor[];
@@ -28,7 +29,7 @@ export function DemoStoreProvider({ children }: { children: ReactNode }) {
   const [reservations, setReservations] = useState<EnrichedReservation[]>(() => listEnrichedReservations());
   const [doctors, setDoctors] = useState<Doctor[]>(() => initialDoctors.map((doctor) => ({ ...doctor })));
   const [types, setTypes] = useState<ReservationType[]>(() => initialTypes.map((type) => ({ ...type })));
-  const [schedule, setSchedule] = useState<ClinicSchedule>({ morningStart: "09:00", morningEnd: "12:00", afternoonStart: "13:00", afternoonEnd: "16:00", closedDays: [0, 6], bookingDays: 30 });
+  const [schedule, setSchedule] = useState<ClinicSchedule>({ morningStart: "09:00", morningEnd: "12:00", afternoonStart: "13:00", afternoonEnd: "16:00", closedDays: [0, 6], bookingDays: 30, exceptions: [] });
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -40,7 +41,7 @@ export function DemoStoreProvider({ children }: { children: ReactNode }) {
           if (Array.isArray(data.reservations)) setReservations(data.reservations);
           if (Array.isArray(data.doctors)) setDoctors(data.doctors);
           if (Array.isArray(data.types)) setTypes(data.types);
-          if (data.schedule && Array.isArray(data.schedule.closedDays)) setSchedule(data.schedule);
+          if (data.schedule && Array.isArray(data.schedule.closedDays)) setSchedule({ ...data.schedule, exceptions: Array.isArray(data.schedule.exceptions) ? data.schedule.exceptions : [] });
         }
       } catch { sessionStorage.removeItem(STORAGE_KEY); }
       setHydrated(true);
