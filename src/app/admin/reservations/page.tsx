@@ -66,7 +66,13 @@ export default function ReservationsListPage() {
     return [...map.values()]
       .filter((patient) =>
         !kw ||
-        [patient.id, patient.name, patient.kana, patient.phone].some((value) => value.toLowerCase().includes(kw)),
+        [
+          patient.id,
+          patient.ehrPatientId ?? "",
+          patient.name,
+          patient.kana,
+          patient.phone,
+        ].some((value) => value.toLowerCase().includes(kw)),
       )
       .sort((a, b) => a.name.localeCompare(b.name, "ja"));
   }, [allReservations, keyword]);
@@ -110,7 +116,7 @@ export default function ReservationsListPage() {
               placeholder={
                 tab === "reservations"
                   ? "患者名・フリガナ・電話番号・患者ID・予約番号で検索"
-                  : "氏名・フリガナ・電話番号・診察券番号で検索"
+                  : "氏名・フリガナ・電話番号・Patient ID・診察券番号で検索"
               }
               className="pl-9"
               value={keyword}
