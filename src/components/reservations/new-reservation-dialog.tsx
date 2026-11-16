@@ -32,6 +32,7 @@ export function NewReservationDialog({ open, onOpenChange, onCreate, initialDate
   const [phone, setPhone] = useState("");
   const [typeId, setTypeId] = useState(reservationTypes[0].id);
   const [time, setTime] = useState("09:00");
+  const [noTime, setNoTime] = useState(false);
   const [date, setDate] = useState(getToday());
   const [doctorId, setDoctorId] = useState(doctors[0]?.id ?? "");
   const [error, setError] = useState("");
@@ -52,9 +53,9 @@ export function NewReservationDialog({ open, onOpenChange, onCreate, initialDate
     const type = types.find((t) => t.id === typeId);
     if (!type) { setError("診療メニューを選択してください。"); return; }
     const chosenDate = initialDate ?? date;
-    const chosenTime = initialTime ?? time;
+    const chosenTime = initialTime ?? (noTime ? "" : time);
     const assignedDoctor = initialDoctorId ?? doctorId;
-    if (!chosenDate || !chosenTime || !assignedDoctor) { setError("予約日・予約時間・担当医を選択してください。"); return; }
+    if (!chosenDate || !assignedDoctor || (!noTime && !chosenTime)) { setError("予約日・担当医を選択し、時間指定予約では予約時間も入力してください。"); return; }
 
     const availability = checkBookingAvailability(
       { date: chosenDate, time: chosenTime, doctorId: assignedDoctor, reservationTypeId: type.id },
@@ -66,7 +67,7 @@ export function NewReservationDialog({ open, onOpenChange, onCreate, initialDate
 
     localSeq += 1;
     const now = new Date().toISOString();
-    const [hour, minute] = chosenTime.split(":").map(Number);
+    const [hour, minute] = chosenTime ? chosenTime.split(":").map(Number) : [0, 0];
     const total = hour * 60 + minute + (type.durationMinutes ?? 30);
     const patientId = initialPatient?.id ?? `pt-new-${localSeq}`;
     const patient: Patient = initialPatient ?? {
@@ -87,7 +88,7 @@ export function NewReservationDialog({ open, onOpenChange, onCreate, initialDate
       doctorId: assignedDoctor,
       reservationDate: chosenDate,
       startTime: chosenTime,
-      endTime: `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`,
+      endTime: chosenTime ? `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}` : "",
       reservationSource: "COUNTER",
       acquisitionSource: "COUNTER",
       status: "RESERVED",
@@ -139,8 +140,19 @@ export function NewReservationDialog({ open, onOpenChange, onCreate, initialDate
             <div className="space-y-1.5"><Label>担当医</Label><Select value={initialDoctorId ?? doctorId} onValueChange={(v) => v && setDoctorId(v)} disabled={!!initialDoctorId}><SelectTrigger className="w-full"><SelectValue>{(v: string) => doctors.find((d) => d.id === v)?.name ?? "担当医"}</SelectValue></SelectTrigger><SelectContent>{doctors.filter((d) => d.active).map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select></div>
           </div>
 
+          <div className="space-y-2">
+            <Label>予約時間の指定</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setNoTime(false)} className={`rounded-md border px-3 py-2 text-sm ${!noTime ? "border-primary bg-primary/5 font-medium text-primary" : "hover:bg-muted/50"}`}>時間を指定する</button>
+              <button type="button" onClick={() => setNoTime(true)} className={`rounded-md border px-3 py-2 text-sm ${noTime ? "border-primary bg-primary/5 font-medium text-primary" : "hover:bg-muted/50"}`}>時間指定なし</button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5"><Label htmlFor="new-res-time">予約時間</Label><Input id="new-res-time" type="time" value={initialTime ?? time} disabled={!!initialTime} onChange={(e) => setTime(e.target.value)} /></div>
+            <div className="space-y-1.5">
+              <Label htmlFor="new-res-time">予約時間</Label>
+              {noTime ? <div className="flex h-9 items-center rounded-md border bg-amber-50 px-3 text-sm text-amber-800">時間指定なし予約</div> : <Input id="new-res-time" type="time" value={initialTime ?? time} disabled={!!initialTime} onChange={(e) => setTime(e.target.value)} />}
+            </div>
             <div className="space-y-1.5"><Label>予約経路</Label><div className="flex h-9 items-center rounded-md border bg-muted/50 px-3 text-sm font-medium">院内受付</div><p className="text-xs text-muted-foreground">管理画面からの登録は変更できません。</p></div>
           </div>
         </div>
