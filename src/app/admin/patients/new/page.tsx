@@ -3,10 +3,11 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Database, UserPlus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { ReactNode } from "react";
 
 const PHONE_PATTERN = /^(?:0\d{1,4}-?\d{1,4}-?\d{3,4})$/;
 
@@ -64,7 +65,7 @@ export default function NewPatientPage() {
       </Card>
 
       <div className="flex flex-wrap justify-end gap-2">
-        <Button variant="outline" asChild><Link href="/admin/reservations">キャンセル</Link></Button>
+        <Link href="/admin/reservations" className={buttonVariants({ variant: "outline" })}>キャンセル</Link>
         <Button disabled={!valid} onClick={() => setPrepared(true)}><UserPlus className="size-4" />入力内容を確認</Button>
       </div>
 
@@ -81,7 +82,7 @@ export default function NewPatientPage() {
   );
 }
 
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+function Field({ label, required, children }: { label: string; required?: boolean; children: ReactNode }) {
   return <div className="space-y-1.5"><Label>{label}{required ? <span className="text-destructive"> *</span> : null}</Label>{children}</div>;
 }
 
