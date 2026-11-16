@@ -19,6 +19,7 @@ export type Patient = {
   kana: string;
   phone: string;
   birthDate: string; // ISO date, e.g. "1985-04-12"
+  ehrPatientId?: string; // 電子カルテ／診察券番号。Crestix Patient IDとは別管理
 };
 
 export type ReservationType = {
@@ -30,6 +31,8 @@ export type ReservationType = {
   color?: string;
   durationMinutes?: number;
   capacity?: number;
+  maxConcurrent?: number;
+  dailyLimit?: number;
 };
 
 export type Doctor = { id: string; clinicId: string; name: string; role: string; active: boolean };
