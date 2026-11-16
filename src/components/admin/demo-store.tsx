@@ -7,12 +7,16 @@ import { listEnrichedReservations } from "@/lib/services/reservation-service";
 import type { EnrichedReservation } from "@/lib/services/types";
 import type { Doctor, ReservationStatus, ReservationType } from "@/types/domain";
 
-type ClinicSchedule = { morningStart: string; morningEnd: string; afternoonStart: string; afternoonEnd: string; closedDays: number[]; bookingDays: number };
+type BookingException = { id: string; date: string; reservationTypeId: string; startTime?: string; endTime?: string; reason?: string };
+type ClinicSchedule = { morningStart: string; morningEnd: string; afternoonStart: string; afternoonEnd: string; closedDays: number[]; bookingDays: number; exceptions: BookingException[] };
+export type DemoRole = "DEVELOPER" | "DIRECTOR" | "RECEPTION";
 type DemoStore = {
   reservations: EnrichedReservation[];
   doctors: Doctor[];
   types: ReservationType[];
   schedule: ClinicSchedule;
+  role: DemoRole;
+  setRole: React.Dispatch<React.SetStateAction<DemoRole>>;
   addReservation: (reservation: EnrichedReservation) => void;
   updateReservation: (id: string, changes: Partial<EnrichedReservation>) => void;
   updateStatus: (id: string, status: ReservationStatus) => void;
@@ -28,7 +32,8 @@ export function DemoStoreProvider({ children }: { children: ReactNode }) {
   const [reservations, setReservations] = useState<EnrichedReservation[]>(() => listEnrichedReservations());
   const [doctors, setDoctors] = useState<Doctor[]>(() => initialDoctors.map((doctor) => ({ ...doctor })));
   const [types, setTypes] = useState<ReservationType[]>(() => initialTypes.map((type) => ({ ...type })));
-  const [schedule, setSchedule] = useState<ClinicSchedule>({ morningStart: "09:00", morningEnd: "12:00", afternoonStart: "13:00", afternoonEnd: "16:00", closedDays: [0, 6], bookingDays: 30 });
+  const [schedule, setSchedule] = useState<ClinicSchedule>({ morningStart: "09:00", morningEnd: "12:00", afternoonStart: "13:00", afternoonEnd: "16:00", closedDays: [0, 6], bookingDays: 30, exceptions: [] });
+  const [role, setRole] = useState<DemoRole>("DEVELOPER");
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -36,11 +41,12 @@ export function DemoStoreProvider({ children }: { children: ReactNode }) {
       try {
         const saved = sessionStorage.getItem(STORAGE_KEY);
         if (saved) {
-          const data = JSON.parse(saved) as { reservations?: EnrichedReservation[]; doctors?: Doctor[]; types?: ReservationType[]; schedule?: ClinicSchedule };
+          const data = JSON.parse(saved) as { reservations?: EnrichedReservation[]; doctors?: Doctor[]; types?: ReservationType[]; schedule?: ClinicSchedule; role?: DemoRole };
           if (Array.isArray(data.reservations)) setReservations(data.reservations);
           if (Array.isArray(data.doctors)) setDoctors(data.doctors);
           if (Array.isArray(data.types)) setTypes(data.types);
-          if (data.schedule && Array.isArray(data.schedule.closedDays)) setSchedule(data.schedule);
+          if (data.schedule && Array.isArray(data.schedule.closedDays)) setSchedule({ ...data.schedule, exceptions: Array.isArray(data.schedule.exceptions) ? data.schedule.exceptions : [] });
+          if (data.role && ["DEVELOPER", "DIRECTOR", "RECEPTION"].includes(data.role)) setRole(data.role);
         }
       } catch { sessionStorage.removeItem(STORAGE_KEY); }
       setHydrated(true);
@@ -49,21 +55,23 @@ export function DemoStoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (hydrated) sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ reservations, doctors, types, schedule }));
-  }, [hydrated, reservations, doctors, types, schedule]);
+    if (hydrated) sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ reservations, doctors, types, schedule, role }));
+  }, [hydrated, reservations, doctors, types, schedule, role]);
 
   const value = useMemo<DemoStore>(() => ({
     reservations: reservations.map((reservation) => ({ ...reservation, reservationType: types.find((type) => type.id === reservation.reservationTypeId) ?? reservation.reservationType })),
     doctors,
     types,
     schedule,
+    role,
+    setRole,
     addReservation: (reservation) => setReservations((current) => [reservation, ...current]),
     updateReservation: (id, changes) => setReservations((current) => current.map((reservation) => reservation.id === id ? { ...reservation, ...changes, updatedAt: new Date().toISOString() } : reservation)),
     updateStatus: (id, status) => setReservations((current) => current.map((reservation) => reservation.id === id ? { ...reservation, status, updatedAt: new Date().toISOString() } : reservation)),
     setDoctors,
     setTypes,
     setSchedule,
-  }), [reservations, doctors, types, schedule]);
+  }), [reservations, doctors, types, schedule, role]);
 
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { ReservationStatusBadge } from "@/components/reservations/reservation-status-badge";
 import { ReservationSourceBadge } from "@/components/reservations/reservation-source-badge";
@@ -20,7 +21,13 @@ import type { ReservationType } from "@/types/domain";
 import type { EnrichedReservation } from "@/lib/services/types";
 
 const ALL = "ALL";
-const columns = "xl:grid-cols-[82px_minmax(105px,1.15fr)_65px_minmax(100px,1.15fr)_minmax(85px,1fr)_75px_85px_66px]";
+type ReceptionTab = "BEFORE_VISIT" | "CHECKED_IN" | "IN_SERVICE";
+const RECEPTION_TABS: { value: ReceptionTab; label: string; description: string; statuses: string[] }[] = [
+  { value: "BEFORE_VISIT", label: "来院前", description: "予約済みで、まだ来院受付していない患者", statuses: ["RESERVED"] },
+  { value: "CHECKED_IN", label: "受付済・待機中", description: "来院受付後、診察開始前までの患者", statuses: ["CHECKED_IN", "WAITING", "CALLED"] },
+  { value: "IN_SERVICE", label: "診察中・完了", description: "診察中または本日の診療が完了した患者", statuses: ["IN_CONSULTATION", "COMPLETED"] },
+];
+const columns = "xl:grid-cols-[82px_minmax(120px,1.2fr)_65px_minmax(100px,1.15fr)_minmax(85px,1fr)_75px_85px_66px]";
 
 export default function AdminDashboardPage() {
   const { reservations, doctors, types, addReservation, updateReservation, updateStatus } = useDemoStore();
@@ -28,42 +35,89 @@ export default function AdminDashboardPage() {
   const [doctorFilter, setDoctorFilter] = useState(ALL);
   const [typeFilter, setTypeFilter] = useState(ALL);
   const [statusFilter, setStatusFilter] = useState(ALL);
+  const [receptionTab, setReceptionTab] = useState<ReceptionTab>("BEFORE_VISIT");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const today = getToday();
 
   const todays = reservations.filter((reservation) => reservation.reservationDate === today);
   const active = todays.filter((reservation) => reservation.status !== "CANCELLED");
+  const noTimeReservations = active
+    .filter((reservation) => !reservation.startTime)
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const currentTab = RECEPTION_TABS.find((tab) => tab.value === receptionTab) ?? RECEPTION_TABS[0];
   const filtered = todays.filter((reservation) => {
     const query = keyword.trim().toLowerCase();
-    return (!query || [reservation.patient.name, reservation.patient.phone, reservation.id].some((value) => value.toLowerCase().includes(query))) &&
+    return !!reservation.startTime && currentTab.statuses.includes(reservation.status) &&
+      (!query || [reservation.patient.name, reservation.patient.phone, reservation.patient.id, reservation.id].some((value) => value.toLowerCase().includes(query))) &&
       (doctorFilter === ALL || reservation.doctorId === doctorFilter) &&
       (typeFilter === ALL || reservation.reservationTypeId === typeFilter) &&
       (statusFilter === ALL || reservation.status === statusFilter);
-  }).sort((a, b) => (a.startTime || "99:99").localeCompare(b.startTime || "99:99"));
+  }).sort((a, b) => a.startTime.localeCompare(b.startTime));
   const selected = reservations.find((reservation) => reservation.id === selectedId) ?? null;
 
   return <div className="space-y-4">
-    <header className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-semibold tracking-tight">本日の予約・受付</h1><p className="text-sm text-muted-foreground">本日 {today} の予約と受付状態をまとめて確認</p></div><Button onClick={() => setNewOpen(true)}><Plus className="size-4" />新規予約</Button></header>
+    <header className="flex flex-wrap items-center justify-between gap-3">
+      <div><h1 className="text-2xl font-semibold tracking-tight">本日の予約・受付</h1><p className="text-sm text-muted-foreground">本日 {today} の予約と来院受付・診察状況を確認</p></div>
+      <Button onClick={() => setNewOpen(true)}><Plus className="size-4" />新規予約</Button>
+    </header>
     <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
       <ReservationKpi active={active} types={types} />
-      <KpiCard label="未受付" value={active.filter((reservation) => reservation.status === "RESERVED").length} unit="件" icon={Users} accent="slate" />
-      <KpiCard label="待機中" value={active.filter((reservation) => ["CHECKED_IN", "WAITING", "CALLED"].includes(reservation.status)).length} unit="件" icon={Clock3} accent="amber" />
-      <KpiCard label="診察中" value={active.filter((reservation) => reservation.status === "IN_CONSULTATION").length} unit="件" icon={Stethoscope} accent="teal" />
+      <KpiCard label="来院前" value={active.filter((reservation) => reservation.status === "RESERVED").length} unit="件" icon={Users} accent="slate" />
+      <KpiCard label="受付済・待機中" value={active.filter((reservation) => ["CHECKED_IN", "WAITING", "CALLED"].includes(reservation.status)).length} unit="件" icon={Clock3} accent="amber" />
+      <KpiCard label="診察中・完了" value={active.filter((reservation) => ["IN_CONSULTATION", "COMPLETED"].includes(reservation.status)).length} unit="件" icon={Stethoscope} accent="teal" />
     </div>
+    {noTimeReservations.length > 0 && (
+      <Card className="border-amber-200 bg-amber-50/40">
+        <CardContent className="space-y-3 pt-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="font-semibold text-amber-950">時間指定なし予約</h2>
+              <p className="text-xs text-amber-800">時間指定予約に埋もれないよう、常に一覧上部へ固定表示します。</p>
+            </div>
+            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">{noTimeReservations.length}件</span>
+          </div>
+          <div className="rounded-lg border bg-background">
+            {noTimeReservations.map((reservation) => (
+              <div key={reservation.id} className="grid gap-2 border-b px-3 py-2 text-sm last:border-b-0 md:grid-cols-[minmax(180px,1.5fr)_minmax(120px,1fr)_minmax(100px,1fr)_90px] md:items-center">
+                <div className="min-w-0 font-medium">
+                  <Link href={`/admin/patients/${reservation.patientId}`} className="text-primary hover:underline">{reservation.patient.name}</Link>
+                  <span className="block truncate text-[11px] font-normal text-muted-foreground">Patient ID: {reservation.patient.id}</span>
+                </div>
+                <span>{types.find((type) => type.id === reservation.reservationTypeId)?.name ?? reservation.reservationType.name}</span>
+                <ReservationStatusBadge status={reservation.status} />
+                <Button size="sm" variant="outline" onClick={() => setSelectedId(reservation.id)}>詳細</Button>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    )}
+
     <Card><CardContent className="space-y-3 pt-4">
+      <div className="space-y-2">
+        <Tabs value={receptionTab} onValueChange={(value) => { setReceptionTab(value as ReceptionTab); setStatusFilter(ALL); }}>
+          <TabsList className="grid h-auto w-full grid-cols-3">
+            {RECEPTION_TABS.map((tab) => {
+              const count = active.filter((reservation) => tab.statuses.includes(reservation.status)).length;
+              return <TabsTrigger key={tab.value} value={tab.value} className="gap-2 py-2"><span>{tab.label}</span><span className="rounded-full bg-muted px-2 py-0.5 text-[11px] tabular-nums text-muted-foreground">{count}</span></TabsTrigger>;
+            })}
+          </TabsList>
+        </Tabs>
+        <p className="text-xs text-muted-foreground">{currentTab.description}</p>
+      </div>
       <div className="grid gap-2 lg:grid-cols-[minmax(220px,1fr)_repeat(3,minmax(140px,180px))]">
-        <div className="relative"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="患者名・電話番号・予約番号で検索" placeholder="患者名・電話番号・予約番号" className="pl-9" value={keyword} onChange={(event) => setKeyword(event.target.value)} /></div>
+        <div className="relative"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input aria-label="患者名・電話番号・患者ID・予約IDで検索" placeholder="患者名・電話番号・患者ID・予約ID" className="pl-9" value={keyword} onChange={(event) => setKeyword(event.target.value)} /></div>
         <Filter value={doctorFilter} onChange={setDoctorFilter} label="担当医" options={doctors.map((doctor) => [doctor.id, doctor.name])} />
         <Filter value={typeFilter} onChange={setTypeFilter} label="診療メニュー" options={types.map((type) => [type.id, type.name])} />
         <Filter value={statusFilter} onChange={setStatusFilter} label="予約状態" options={Object.entries(RESERVATION_STATUS_LABEL)} />
       </div>
-      <div className="rounded-lg border"><div className={`hidden gap-2 border-b bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground xl:grid ${columns}`}><span>予約時間</span><span>患者名</span><span>初診・再診</span><span>診療メニュー</span><span>担当医</span><span>予約経路</span><span>受付状態</span><span>操作</span></div>
-        <div className="max-h-[calc(100vh-355px)] min-h-40 overflow-y-auto">{filtered.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">該当する予約がありません</p> : filtered.map((reservation) => {
+      <div className="rounded-lg border"><div className={`hidden gap-2 border-b bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground xl:grid ${columns}`}><span>予約時間</span><span>患者名 / Patient ID</span><span>初診・再診</span><span>診療メニュー</span><span>担当医</span><span>予約経路</span><span>受付状態</span><span>操作</span></div>
+        <div className="max-h-[calc(100vh-390px)] min-h-40 overflow-y-auto">{filtered.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">該当する予約がありません</p> : filtered.map((reservation) => {
           const pastVisits = getPatientSummary(reservation.patient, reservations, today).history.filter(({ reservation: visit }) => visit.status === "COMPLETED" && visit.reservationDate < reservation.reservationDate).length;
           return <div key={reservation.id} className={`grid gap-2 border-b px-3 py-2 text-sm last:border-b-0 xl:items-center ${columns}`}>
-            <span className="font-semibold">{reservation.startTime || "時間指定なし"}</span>
-            <span className="min-w-0 truncate font-medium"><Link href={`/admin/patients/${reservation.patientId}`} className="text-primary hover:underline">{reservation.patient.name}</Link><span className="block truncate text-[11px] font-normal text-muted-foreground">{reservation.id}</span></span>
+            <span className="font-semibold">{reservation.startTime}</span>
+            <span className="min-w-0 truncate font-medium"><Link href={`/admin/patients/${reservation.patientId}`} className="text-primary hover:underline">{reservation.patient.name}</Link><span className="block truncate text-[11px] font-normal text-muted-foreground">Patient ID: {reservation.patient.id}</span></span>
             <span>{pastVisits > 0 ? "再診" : "初診"}</span>
             <span className="truncate">{types.find((type) => type.id === reservation.reservationTypeId)?.name ?? reservation.reservationType.name}</span>
             <span className="truncate">{doctors.find((doctor) => doctor.id === reservation.doctorId)?.name ?? "未設定"}</span>

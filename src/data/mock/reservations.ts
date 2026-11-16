@@ -137,7 +137,31 @@ reservationsToday.push(
   }),
 );
 
-// --- Remaining grid cells to reach the dashboard's exact totals ---------
+// --- Time-unspecified samples kept separate so they are always visible ---
+reservationsToday.push(
+  buildReservation({
+    patientId: NAMED_PATIENTS.satoTaro.id,
+    reservationTypeId: RESERVATION_TYPE_IDS.GENERAL,
+    date: TODAY,
+    startTime: "",
+    endTime: "",
+    source: "COUNTER",
+    status: "RESERVED",
+    notes: "時間指定なし予約のデモ",
+  }),
+  buildReservation({
+    patientId: NAMED_PATIENTS.suzukiHanako.id,
+    reservationTypeId: RESERVATION_TYPE_IDS.GENERAL,
+    date: TODAY,
+    startTime: "",
+    endTime: "",
+    source: "PHONE",
+    status: "CHECKED_IN",
+    notes: "時間指定なし予約のデモ",
+  }),
+);
+
+// --- Remaining grid cells to reach the dashboard's approximate totals ---------
 // 予約内容別: 一般診察15 / 胃カメラ14 / 大腸関連8 / 人間ドック5 (= 42 件)
 // 予約経路別: WEB16 / LINE11 / 電子カルテ6 / 院内受付5 / Google4 (= 42 件)
 type Cell = { type: string; source: ReservationSource; count: number };

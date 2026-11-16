@@ -46,3 +46,38 @@ export function getMonthlyAnalytics(referenceDate?: string, allReservations?: Re
     matrix,
   };
 }
+
+
+export function getAnalyticsForRange(
+  startDate: string,
+  endDate: string,
+  allReservations: Reservation[],
+  configuredTypes: ReservationType[] = reservationTypes,
+) {
+  const ranged = allReservations.filter(
+    (r) => r.reservationDate >= startDate && r.reservationDate <= endDate && r.status !== "CANCELLED",
+  );
+  const byType = summarizeByType(ranged).map((row) => ({
+    ...row,
+    name: configuredTypes.find((type) => type.id === row.reservationTypeId)?.name ?? row.name,
+  }));
+  const bySource = summarizeBySource(ranged);
+  const matrix: TypeSourceMatrixRow[] = configuredTypes
+    .map((type) => {
+      const typeReservations = ranged.filter((r) => r.reservationTypeId === type.id);
+      if (typeReservations.length === 0) return null;
+      return {
+        reservationTypeId: type.id,
+        typeName: type.name,
+        bySource: SOURCES.map((source) => ({
+          source,
+          label: RESERVATION_SOURCE_LABEL[source],
+          count: typeReservations.filter((r) => r.reservationSource === source).length,
+        })).filter((row) => row.count > 0),
+        total: typeReservations.length,
+      };
+    })
+    .filter((row): row is TypeSourceMatrixRow => row !== null)
+    .sort((a, b) => b.total - a.total);
+  return { totalCount: ranged.length, byType, bySource, matrix };
+}

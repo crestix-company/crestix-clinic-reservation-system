@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { Plus } from "lucide-react";
 import type { EnrichedReservation } from "@/lib/services/types";
 import type { ReservationType } from "@/types/domain";
+import { getToday } from "@/lib/services/reservation-service";
 
 export const CALENDAR_TIME_SLOTS = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "13:00", "13:30", "14:00", "14:30", "15:00"];
 
@@ -20,6 +21,7 @@ type Props = {
 };
 
 export function ReservationCalendar({ view, days, reservations, types, schedule, onSelect, onNew }: Props) {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const configuredSlots = CALENDAR_TIME_SLOTS.filter(
     (slot) =>
       (slot >= schedule.morningStart && slot < schedule.morningEnd) ||
@@ -30,9 +32,27 @@ export function ReservationCalendar({ view, days, reservations, types, schedule,
     .filter((slot) => slot && !configuredSlots.includes(slot));
   const slots = [...new Set([...configuredSlots, ...extraSlots].sort())];
   const columns = view === "day" ? "76px minmax(0,1fr)" : "60px repeat(5,minmax(0,1fr))";
+  const slotKey = slots.join(",");
+
+  useEffect(() => {
+    if (view !== "day" || format(days[0], "yyyy-MM-dd") !== getToday()) return;
+    const now = new Date();
+    const targetMinutes = Math.max(0, now.getHours() * 60 + now.getMinutes() - 60);
+    let nearestIndex = 0;
+    let nearestDiff = Number.POSITIVE_INFINITY;
+    slots.forEach((slot, index) => {
+      const [hour, minute] = slot.split(":").map(Number);
+      const diff = Math.abs(hour * 60 + minute - targetMinutes);
+      if (diff < nearestDiff) { nearestDiff = diff; nearestIndex = index; }
+    });
+    const container = scrollRef.current;
+    if (!container) return;
+    const row = container.querySelector<HTMLElement>(`[data-slot-index="${nearestIndex}"]`);
+    if (row) container.scrollTop = Math.max(0, row.offsetTop - 40);
+  }, [view, days, slotKey]);
 
   return (
-    <div className="max-h-[calc(100vh-245px)] overflow-y-auto rounded-lg border">
+    <div ref={scrollRef} className="max-h-[calc(100vh-245px)] overflow-y-auto rounded-lg border">
       <div className="grid border-b bg-muted/40" style={{ gridTemplateColumns: columns }}>
         <div className="border-r px-2 py-2 text-xs text-muted-foreground">時間</div>
         {days.map((day) => (
@@ -45,8 +65,36 @@ export function ReservationCalendar({ view, days, reservations, types, schedule,
         ))}
       </div>
 
-      {slots.map((slot) => (
-        <div key={slot} className="grid border-b last:border-b-0" style={{ gridTemplateColumns: columns }}>
+      <div className="grid border-b bg-amber-50/60" style={{ gridTemplateColumns: columns }}>
+        <div className="border-r px-2 py-3 text-xs font-semibold text-amber-900">時間指定なし</div>
+        {days.map((day) => {
+          const date = format(day, "yyyy-MM-dd");
+          const items = reservations.filter((reservation) => reservation.reservationDate === date && !reservation.startTime && reservation.status !== "CANCELLED");
+          return (
+            <div key={date} className="min-w-0 border-r p-2 last:border-r-0">
+              {items.length === 0 ? (
+                <span className="text-[10px] text-muted-foreground/60">なし</span>
+              ) : (
+                <div className="space-y-1">
+                  {items.map((reservation) => (
+                    <button
+                      key={reservation.id}
+                      onClick={() => onSelect(reservation)}
+                      className="block w-full rounded border border-amber-200 bg-background px-2 py-1 text-left text-xs hover:bg-amber-50"
+                    >
+                      <span className="block truncate font-medium">{reservation.patient.name}</span>
+                      <span className="block truncate text-[10px] text-muted-foreground">{reservation.reservationType.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {slots.map((slot, slotIndex) => (
+        <div key={slot} data-slot-index={slotIndex} className="grid border-b last:border-b-0" style={{ gridTemplateColumns: columns }}>
           <div className="border-r px-2 py-2 text-xs text-muted-foreground">{slot}</div>
           {days.map((day) => {
             const date = format(day, "yyyy-MM-dd");
