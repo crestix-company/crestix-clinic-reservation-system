@@ -12,6 +12,8 @@ export function CallNumberMonitorPopover() {
   const router = useRouter();
   const queue = useMemo(() => listTodayReceptionQueue(), []);
   const [open, setOpen] = useState(false);
+  const [pinnedOpen, setPinnedOpen] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [position, setPosition] = useState(DEFAULT_POSITION);
   const [dragging, setDragging] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
@@ -66,6 +68,32 @@ export function CallNumberMonitorPopover() {
   const next = queue.find((item) => item.status === "WAITING") ?? null;
   const waitingCount = queue.filter((item) => item.status === "WAITING" || item.status === "CALLED").length;
 
+  function keepOpen() {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    if (!dragging) setOpen(true);
+  }
+
+  function closeWithDelay() {
+    if (pinnedOpen || dragging) return;
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setOpen(false), 1200);
+  }
+
+  function togglePinnedOpen() {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    setPinnedOpen((currentPinned) => {
+      const nextPinned = !currentPinned;
+      setOpen(nextPinned);
+      return nextPinned;
+    });
+  }
+
   function startDrag(event: React.PointerEvent<HTMLButtonElement>) {
     if (event.button !== 0) return;
     const rect = event.currentTarget.parentElement?.parentElement?.getBoundingClientRect();
@@ -76,6 +104,7 @@ export function CallNumberMonitorPopover() {
       y: event.clientY - rect.top,
     };
     setDragging(true);
+    setPinnedOpen(false);
     setOpen(false);
     event.currentTarget.setPointerCapture?.(event.pointerId);
   }
@@ -84,8 +113,8 @@ export function CallNumberMonitorPopover() {
     <div
       className="fixed z-40"
       style={{ left: position.x, top: position.y }}
-      onMouseEnter={() => !dragging && setOpen(true)}
-      onMouseLeave={() => !dragging && setOpen(false)}
+      onMouseEnter={keepOpen}
+      onMouseLeave={closeWithDelay}
     >
       <div className="relative">
         <div className="flex items-center rounded-full border bg-background shadow-lg">
@@ -103,8 +132,8 @@ export function CallNumberMonitorPopover() {
             type="button"
             aria-label="院内モニターの呼び出し状況"
             aria-expanded={open}
-            onClick={() => setOpen((value) => !value)}
-            onFocus={() => setOpen(true)}
+            onClick={togglePinnedOpen}
+            onFocus={keepOpen}
             className="flex items-center gap-2 rounded-r-full px-3 py-2 text-sm font-medium transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <span className="flex size-8 items-center justify-center rounded-full bg-slate-950 text-white">
@@ -118,10 +147,13 @@ export function CallNumberMonitorPopover() {
         </div>
 
         <div
-          className={`absolute left-0 top-full mt-2 w-[310px] origin-top-left rounded-xl border bg-background p-4 shadow-xl transition-all max-sm:w-[calc(100vw-24px)] ${
+          onMouseEnter={keepOpen}
+          onMouseLeave={closeWithDelay}
+          className={`absolute left-0 top-full w-[310px] origin-top-left pt-2 transition-all max-sm:w-[calc(100vw-24px)] ${
             open && !dragging ? "visible scale-100 opacity-100" : "pointer-events-none invisible scale-95 opacity-0"
           }`}
         >
+          <div className="rounded-xl border bg-background p-4 shadow-xl">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
               <div className="text-sm font-semibold">院内モニター</div>
@@ -166,6 +198,7 @@ export function CallNumberMonitorPopover() {
           <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
             左のハンドルをドラッグすると、院内モニターの位置を自由に移動できます。位置はこのブラウザーに保存されます。
           </p>
+          </div>
         </div>
       </div>
     </div>
