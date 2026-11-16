@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RoleGuard } from "@/components/admin/role-guard";
 
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
@@ -70,6 +71,7 @@ export default function BookingSettingsPage() {
   }
 
   return (
+    <RoleGuard allowed={["DEVELOPER", "DIRECTOR"]}>
     <div className="space-y-5">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">予約設定</h1>
@@ -198,6 +200,7 @@ export default function BookingSettingsPage() {
         </TabsContent>
       </Tabs>
     </div>
+    </RoleGuard>
   );
 }
 
