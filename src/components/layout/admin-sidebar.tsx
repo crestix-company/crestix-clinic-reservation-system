@@ -14,7 +14,7 @@ const groups = [
   { title: "管理・設定", items: [
     { href: "/admin/booking-settings", label: "予約枠・診療設定", icon: Settings },
     { href: "/admin/analytics", label: "予約集計", icon: BarChart3 },
-    { href: "/admin/settings", label: "システム設定", icon: Settings },
+    { href: "/admin/settings", label: "システム設定（開発者）", icon: Settings },
   ] },
 ];
 
