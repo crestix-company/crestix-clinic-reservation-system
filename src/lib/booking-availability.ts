@@ -24,17 +24,17 @@ export function checkBookingAvailability(slot: BookingSlot, reservations: Reserv
   );
   if (exception) return { available: false, reason: exception.reason ? `予約停止：${exception.reason}` : "この日時は予約受付を停止しています。", booked: 0, capacity: type.maxConcurrent ?? type.capacity ?? 1 };
 
+  const active = reservations.filter((reservation) => reservation.id !== excludeId && reservation.status !== "CANCELLED");
+  const dailyCount = active.filter((reservation) => reservation.reservationDate === slot.date && reservation.reservationTypeId === slot.reservationTypeId).length;
+  if (type.dailyLimit && dailyCount >= type.dailyLimit) {
+    return { available: false, reason: "この診療メニューは1日の受付上限に達しています。", booked: dailyCount, capacity: type.dailyLimit };
+  }
+
   if (!slot.time) {
     return { available: true, reason: "時間指定なし予約", booked: dailyCount, capacity: type.dailyLimit ?? Number.MAX_SAFE_INTEGER };
   }
   if (!((slot.time >= schedule.morningStart && slot.time < schedule.morningEnd) || (slot.time >= schedule.afternoonStart && slot.time < schedule.afternoonEnd))) {
     return { available: false, reason: "診療時間外です。", booked: 0, capacity: type.maxConcurrent ?? type.capacity ?? 1 };
-  }
-
-  const active = reservations.filter((reservation) => reservation.id !== excludeId && reservation.status !== "CANCELLED");
-  const dailyCount = active.filter((reservation) => reservation.reservationDate === slot.date && reservation.reservationTypeId === slot.reservationTypeId).length;
-  if (type.dailyLimit && dailyCount >= type.dailyLimit) {
-    return { available: false, reason: "この診療メニューは1日の受付上限に達しています。", booked: dailyCount, capacity: type.dailyLimit };
   }
 
   const booked = active.filter((reservation) =>
