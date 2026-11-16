@@ -65,6 +65,34 @@ export function ReservationCalendar({ view, days, reservations, types, schedule,
         ))}
       </div>
 
+      <div className="grid border-b bg-amber-50/60" style={{ gridTemplateColumns: columns }}>
+        <div className="border-r px-2 py-3 text-xs font-semibold text-amber-900">時間指定なし</div>
+        {days.map((day) => {
+          const date = format(day, "yyyy-MM-dd");
+          const items = reservations.filter((reservation) => reservation.reservationDate === date && !reservation.startTime && reservation.status !== "CANCELLED");
+          return (
+            <div key={date} className="min-w-0 border-r p-2 last:border-r-0">
+              {items.length === 0 ? (
+                <span className="text-[10px] text-muted-foreground/60">なし</span>
+              ) : (
+                <div className="space-y-1">
+                  {items.map((reservation) => (
+                    <button
+                      key={reservation.id}
+                      onClick={() => onSelect(reservation)}
+                      className="block w-full rounded border border-amber-200 bg-background px-2 py-1 text-left text-xs hover:bg-amber-50"
+                    >
+                      <span className="block truncate font-medium">{reservation.patient.name}</span>
+                      <span className="block truncate text-[10px] text-muted-foreground">{reservation.reservationType.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
       {slots.map((slot, slotIndex) => (
         <div key={slot} data-slot-index={slotIndex} className="grid border-b last:border-b-0" style={{ gridTemplateColumns: columns }}>
           <div className="border-r px-2 py-2 text-xs text-muted-foreground">{slot}</div>
